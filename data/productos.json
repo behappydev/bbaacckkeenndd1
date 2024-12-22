@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "1",
+    "title": "Camiseta Deportiva",
+    "description": "Camiseta de alto rendimiento para deportes",
+    "code": "CD001",
+    "price": 29.99,
+    "status": true,
+    "stock": 150,
+    "category": "Ropa Deportiva",
+    "thumbnails": [
+      "camiseta1.jpg",
+      "camiseta2.jpg"
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Camiseta Playera",
+    "description": "Camiseta playera, especialmente para el verano",
+    "code": "CD002",
+    "price": 39.99,
+    "status": true,
+    "stock": 250,
+    "category": "Ropa",
+    "thumbnails": [
+      "camiseta1.jpg",
+      "camiseta2.jpg"
+    ]
+  }
+]

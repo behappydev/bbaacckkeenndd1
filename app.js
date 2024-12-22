@@ -4,8 +4,8 @@ const app = express();
 const PORT = 8080;
 
 // Routers
-const productsRouter = require('./routers/products.router');
-const cartsRouter = require('./routers/carts.router');
+const productsRouter = require('./routers/products.router.js');
+const cartsRouter = require('./routers/carts.router.js');
 
 // Middleware para parsear JSON
 app.use(express.json());
