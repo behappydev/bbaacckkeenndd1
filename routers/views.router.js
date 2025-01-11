@@ -23,4 +23,9 @@ router.get("/realtimeproducts", async (req, res) => {
   }
 });
 
+// Redireccionar la raíz a /home
+router.get("/", (req, res) => {
+  res.redirect("/home");
+});
+
 module.exports = router;

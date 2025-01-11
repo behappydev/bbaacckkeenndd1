@@ -6,9 +6,9 @@
     "code": "CD001",
     "price": 29.99,
     "status": true,
-    "stock": 100,
+    "stock": 150,
     "category": "Ropa Deportiva",
-    "thumbnails": ["camiseta1.jpg", "camiseta2.jpg"]
+    "thumbnails": []
   },
   {
     "id": "2",
@@ -19,6 +19,20 @@
     "status": true,
     "stock": 50,
     "category": "Ropa Deportiva",
-    "thumbnails": ["pantalon1.jpg", "pantalon2.jpg"]
+    "thumbnails": [
+      "pantalon1.jpg",
+      "pantalon2.jpg"
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Lechuga",
+    "description": "Lechuga Mantecosa",
+    "code": "420420",
+    "price": 420,
+    "status": true,
+    "stock": 4,
+    "category": "Verdulería",
+    "thumbnails": []
   }
 ]

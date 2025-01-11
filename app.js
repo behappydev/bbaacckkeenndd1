@@ -52,14 +52,17 @@ const server = app.listen(PORT, () => {
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// Pasar io a los routers si es necesario (opcional, según necesidades)
-app.set("io", io);
-
 // Manejar conexiones de Socket.io
 io.on("connection", (socket) => {
   console.log("Un usuario se ha conectado");
 
-  // Escuchar eventos de agregar producto
+  // Emitir la lista actual de productos al nuevo cliente
+  (async () => {
+    const allProducts = await productsController.getAll();
+    socket.emit("updateProducts", allProducts);
+  })();
+
+  // Evento para agregar producto
   socket.on("newProduct", async (productData) => {
     try {
       const newProduct = await productsController.create(productData);
@@ -72,29 +75,29 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Escuchar eventos de eliminar producto
-  socket.on("deleteProduct", async (productId) => {
-    try {
-      await productsController.delete(productId);
-      const allProducts = await productsController.getAll();
-      io.emit("updateProducts", allProducts);
-      socket.emit("successMessage", "Producto eliminado exitosamente.");
-    } catch (error) {
-      console.error("Error al eliminar producto:", error);
-      socket.emit("errorMessage", "Error al eliminar el producto.");
-    }
-  });
-
-  // Escuchar eventos de modificar producto
+  // Evento para modificar producto
   socket.on("modifyProduct", async (updatedProduct) => {
     try {
       await productsController.update(updatedProduct.id, updatedProduct);
       const allProducts = await productsController.getAll();
-      io.emit("updateProducts", allProducts);
+      io.emit("updateProducts", allProducts); // Emitir a todos los clientes
       socket.emit("successMessage", "Producto modificado exitosamente.");
     } catch (error) {
       console.error("Error al modificar producto:", error);
       socket.emit("errorMessage", "Error al modificar el producto.");
+    }
+  });
+
+  // Evento para eliminar producto
+  socket.on("deleteProduct", async (productId) => {
+    try {
+      await productsController.delete(productId);
+      const allProducts = await productsController.getAll();
+      io.emit("updateProducts", allProducts); // Emitir a todos los clientes
+      socket.emit("successMessage", "Producto eliminado exitosamente.");
+    } catch (error) {
+      console.error("Error al eliminar producto:", error);
+      socket.emit("errorMessage", "Error al eliminar el producto.");
     }
   });
 

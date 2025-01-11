@@ -1,253 +1,325 @@
 <!-- views/realTimeProducts.handlebars -->
 <div class="container mt-5">
-  <h1 class="mb-4 text-center">Productos en Tiempo Real</h1>
+    <h1 class="mb-4 text-center">Productos en Tiempo Real</h1>
 
-  <!-- Formulario para agregar nuevo producto -->
-  <div class="card mb-4 shadow-sm">
-    <div class="card-header bg-primary text-white">
-      <h5 class="mb-0">Agregar Nuevo Producto</h5>
+    <!-- Formulario para agregar nuevo producto -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Agregar Nuevo Producto</h5>
+        </div>
+        <div class="card-body">
+            <form id="add-product-form">
+                <div class="mb-3">
+                    <input type="text" id="title" class="form-control" placeholder="Título" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="description" class="form-control" placeholder="Descripción" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="code" class="form-control" placeholder="Código" required>
+                </div>
+                <div class="mb-3">
+                    <input type="number" id="price" class="form-control" placeholder="Precio" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <input type="number" id="stock" class="form-control" placeholder="Stock" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" id="category" class="form-control" placeholder="Categoría" required>
+                </div>
+                <button type="submit" class="btn btn-success">Agregar Producto</button>
+            </form>
+        </div>
     </div>
-    <div class="card-body">
-      <form id="add-product-form">
-        <div class="mb-3">
-          <input
-            type="text"
-            id="title"
-            class="form-control"
-            placeholder="Título"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <input
-            type="text"
-            id="description"
-            class="form-control"
-            placeholder="Descripción"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <input
-            type="text"
-            id="code"
-            class="form-control"
-            placeholder="Código"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <input
-            type="number"
-            id="price"
-            class="form-control"
-            placeholder="Precio"
-            step="0.01"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <input
-            type="number"
-            id="stock"
-            class="form-control"
-            placeholder="Stock"
-            required
-          />
-        </div>
-        <div class="mb-3">
-          <input
-            type="text"
-            id="category"
-            class="form-control"
-            placeholder="Categoría"
-            required
-          />
-        </div>
-        <button type="submit" class="btn btn-success">Agregar Producto</button>
-      </form>
-    </div>
-  </div>
 
-  <!-- Lista de productos -->
-  <ul class="list-group" id="products-list">
-    {{#each products}}
-      <li
-        class="list-group-item d-flex justify-content-between align-items-start"
-        data-id="{{this.id}}"
-      >
-        <div class="ms-2 me-auto">
-          <div class="fw-bold">{{this.title}}</div>
-          <p>{{this.description}}</p>
-          <p><strong>Precio:</strong> ${{this.price}}</p>
-          <p><strong>Categoría:</strong> {{this.category}}</p>
-          <p><strong>Stock:</strong> {{this.stock}}</p>
-          <p><strong>Código:</strong> {{this.code}}</p>
-          <p><strong>Estado:</strong>
-            {{#if this.status}}Activo{{else}}Inactivo{{/if}}</p>
-        </div>
-        <div>
-          <button
-            class="btn btn-warning btn-sm modify-btn me-2"
-          >Modificar</button>
-          <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
-        </div>
-
-        <!-- Formulario de edición -->
-        <form class="edit-form mt-3 p-3 border rounded" style="display: none;">
-          <div class="mb-3">
-            <input
-              type="text"
-              class="form-control edit-title"
-              placeholder="Título"
-              value="{{this.title}}"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <input
-              type="text"
-              class="form-control edit-description"
-              placeholder="Descripción"
-              value="{{this.description}}"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <input
-              type="text"
-              class="form-control edit-code"
-              placeholder="Código"
-              value="{{this.code}}"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <input
-              type="number"
-              class="form-control edit-price"
-              placeholder="Precio"
-              step="0.01"
-              value="{{this.price}}"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <input
-              type="number"
-              class="form-control edit-stock"
-              placeholder="Stock"
-              value="{{this.stock}}"
-              required
-            />
-          </div>
-          <div class="mb-3">
-            <input
-              type="text"
-              class="form-control edit-category"
-              placeholder="Categoría"
-              value="{{this.category}}"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            class="btn btn-primary btn-sm me-2"
-          >Guardar</button>
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm cancel-btn"
-          >Cancelar</button>
-        </form>
-      </li>
-    {{/each}}
-  </ul>
+    <!-- Lista de productos -->
+    <ul class="list-group" id="products-list">
+        <!-- Los productos se renderizarán aquí dinámicamente -->
+    </ul>
 </div>
 
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" :class="{'bg-warning': actionType === 'delete', 'bg-info': actionType === 'modify'}">
+        <h5 class="modal-title" id="confirmationModalLabel">{{ modalTitle }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        {{ modalMessage }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="confirm-action-btn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contenedor de Toasts -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toast-container">
+        <!-- Los toasts se agregarán aquí dinámicamente -->
+    </div>
+</div>
+
+<!-- Scripts específicos para esta vista -->
 <script>
-  const socket = io(); // Función para mostrar alertas const showAlert =
-  (message, type = 'success') => { const alertArea =
-  document.getElementById('alert-area'); const alert =
-  document.createElement('div'); alert.className = `alert alert-${type}
-  alert-dismissible fade show`; alert.role = 'alert'; alert.innerHTML = `
-  ${message} <button type="button" class="btn-close" data-bs-dismiss="alert"
-  aria-label="Cerrar"></button> `; alertArea.appendChild(alert); // Eliminar la
-  alerta después de 3 segundos setTimeout(() => { const alertInstance =
-  bootstrap.Alert.getOrCreateInstance(alert); alertInstance.close(); }, 3000);
-  }; // Función para renderizar la lista de productos const renderProducts =
-  (products) => { const productsList = document.getElementById('products-list');
-  productsList.innerHTML = ''; // Limpiar la lista actual
-  products.forEach(product => { const li = document.createElement('li');
-  li.className = 'list-group-item d-flex justify-content-between
-  align-items-start'; li.setAttribute('data-id', product.id); li.innerHTML = `
-  <div class="ms-2 me-auto"> <div class="fw-bold">${product.title}</div>
-  <p>${product.description}</p> <p><strong>Precio:</strong>
-  $${product.price}</p> <p><strong>Categoría:</strong> ${product.category}</p>
-  <p><strong>Stock:</strong> ${product.stock}</p> <p><strong>Código:</strong>
-  ${product.code}</p> <p><strong>Estado:</strong> ${product.status ? 'Activo' :
-  'Inactivo'}</p> </div> <div> <button class="btn btn-warning btn-sm modify-btn
-  me-2">Modificar</button> <button class="btn btn-danger btn-sm
-  delete-btn">Eliminar</button> </div> <!-- Formulario de edición --> <form
-  class="edit-form mt-3 p-3 border rounded" style="display: none;"> <div
-  class="mb-3"> <input type="text" class="form-control edit-title"
-  placeholder="Título" value="${product.title}" required> </div> <div
-  class="mb-3"> <input type="text" class="form-control edit-description"
-  placeholder="Descripción" value="${product.description}" required> </div> <div
-  class="mb-3"> <input type="text" class="form-control edit-code"
-  placeholder="Código" value="${product.code}" required> </div> <div
-  class="mb-3"> <input type="number" class="form-control edit-price"
-  placeholder="Precio" step="0.01" value="${product.price}" required> </div>
-  <div class="mb-3"> <input type="number" class="form-control edit-stock"
-  placeholder="Stock" value="${product.stock}" required> </div> <div
-  class="mb-3"> <input type="text" class="form-control edit-category"
-  placeholder="Categoría" value="${product.category}" required> </div> <button
-  type="submit" class="btn btn-primary btn-sm me-2">Guardar</button> <button
-  type="button" class="btn btn-secondary btn-sm cancel-btn">Cancelar</button>
-  </form> `; productsList.appendChild(li); }); }; // Escuchar actualizaciones de
-  productos socket.on('updateProducts', (products) => {
-  renderProducts(products); showAlert('Lista de productos actualizada', 'info');
-  }); // Escuchar mensajes de éxito socket.on('successMessage', (msg) => {
-  showAlert(msg, 'success'); }); // Escuchar mensajes de error
-  socket.on('errorMessage', (msg) => { showAlert(msg, 'danger'); }); // Manejar
-  el formulario de agregar producto const form =
-  document.getElementById('add-product-form'); form.addEventListener('submit',
-  (e) => { e.preventDefault(); const newProduct = { title:
-  document.getElementById('title').value, description:
-  document.getElementById('description').value, code:
-  document.getElementById('code').value, price:
-  parseFloat(document.getElementById('price').value), stock:
-  parseInt(document.getElementById('stock').value), category:
-  document.getElementById('category').value, thumbnails: [] };
-  socket.emit('newProduct', newProduct); showAlert('Producto agregado
-  exitosamente'); form.reset(); }); // Delegación de eventos para "Eliminar",
-  "Modificar" y "Cancelar"
-  document.getElementById('products-list').addEventListener('click', (e) => {
-  if(e.target && e.target.matches('button.delete-btn')) { const li =
-  e.target.closest('li'); const productId = li.getAttribute('data-id'); const
-  productTitle = li.querySelector('.fw-bold').textContent; // Mostrar
-  confirmación antes de eliminar const confirmDelete = confirm(`¿Estás seguro de
-  que deseas eliminar el producto "${productTitle}"?`); if (confirmDelete) {
-  socket.emit('deleteProduct', productId); } } if(e.target &&
-  e.target.matches('button.modify-btn')) { const li = e.target.closest('li');
-  const editForm = li.querySelector('.edit-form'); editForm.style.display =
-  'block'; // Mostrar el formulario de edición } if(e.target &&
-  e.target.matches('button.cancel-btn')) { const li = e.target.closest('li');
-  const editForm = li.querySelector('.edit-form'); editForm.style.display =
-  'none'; // Ocultar el formulario de edición } }); // Manejar el envío del
-  formulario de edición
-  document.getElementById('products-list').addEventListener('submit', (e) => {
-  if(e.target && e.target.matches('.edit-form')) { e.preventDefault(); const li
-  = e.target.closest('li'); const productId = li.getAttribute('data-id'); const
-  productTitle = li.querySelector('.fw-bold').textContent; // Mostrar
-  confirmación antes de modificar const confirmModify = confirm(`¿Estás seguro
-  de que deseas modificar el producto "${productTitle}"?`); if (!confirmModify)
-  { e.target.style.display = 'none'; return; } const updatedProduct = { id:
-  productId, title: li.querySelector('.edit-title').value, description:
-  li.querySelector('.edit-description').value, code:
-  li.querySelector('.edit-code').value, price:
-  parseFloat(li.querySelector('.edit-price').value), stock:
-  parseInt(li.querySelector('.edit-stock').value), category:
-  li.querySelector('.edit-category').value, thumbnails: [] };
-  socket.emit('modifyProduct', updatedProduct); e.target.style.display = 'none';
-  // Ocultar el formulario después de enviar } });
+    document.addEventListener('DOMContentLoaded', () => {
+        const socket = io();
+
+        // Variables para manejar acciones en el modal
+        let currentAction = null; // 'modify' o 'delete'
+        let currentProductId = null;
+
+        // Referencias al modal
+        const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'), {
+            keyboard: false
+        });
+        const modalTitle = document.getElementById('confirmationModalLabel');
+        const modalMessage = document.querySelector('#confirmationModal .modal-body');
+        const confirmActionBtn = document.getElementById('confirm-action-btn');
+
+        // Función para mostrar toasts
+        const showToast = (message, type = 'success') => {
+            const toastContainer = document.getElementById('toast-container');
+            const toastId = `toast-${Date.now()}`;
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+            `;
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+
+            // Eliminar el toast del DOM después de ocultarse
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        };
+
+        // Función para renderizar la lista de productos
+        const renderProducts = (products) => {
+            const productsList = document.getElementById('products-list');
+            productsList.innerHTML = ''; // Limpiar la lista actual
+
+            products.forEach(product => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-start';
+                li.setAttribute('data-id', product.id);
+                li.innerHTML = `
+                    <div class="ms-2 me-auto">
+                        <div class="fw-bold">${product.title}</div>
+                        <p>${product.description}</p>
+                        <p><strong>Precio:</strong> $${product.price.toFixed(2)}</p>
+                        <p><strong>Categoría:</strong> ${product.category}</p>
+                        <p><strong>Stock:</strong> ${product.stock}</p>
+                        <p><strong>Código:</strong> ${product.code}</p>
+                        <p><strong>Estado:</strong> ${product.status ? 'Activo' : 'Inactivo'}</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-warning btn-sm modify-btn me-2">Modificar</button>
+                        <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+                    </div>
+
+                    <!-- Formulario de edición -->
+                    <form class="edit-form mt-3 p-3 border rounded" style="display: none;">
+                        <div class="mb-3">
+                            <input type="text" class="form-control edit-title" placeholder="Título" value="${product.title}" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control edit-description" placeholder="Descripción" value="${product.description}" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control edit-code" placeholder="Código" value="${product.code}" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="number" class="form-control edit-price" placeholder="Precio" step="0.01" value="${product.price}" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="number" class="form-control edit-stock" placeholder="Stock" value="${product.stock}" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control edit-category" placeholder="Categoría" value="${product.category}" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm me-2">Guardar</button>
+                        <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancelar</button>
+                    </form>
+                `;
+                productsList.appendChild(li);
+            });
+        };
+
+        // Escuchar actualizaciones de productos
+        socket.on('updateProducts', (products) => {
+            renderProducts(products);
+            showToast('Lista de productos actualizada', 'info');
+        });
+
+        // Escuchar mensajes de éxito
+        socket.on('successMessage', (msg) => {
+            showToast(msg, 'success');
+        });
+
+        // Escuchar mensajes de error
+        socket.on('errorMessage', (msg) => {
+            showToast(msg, 'danger');
+        });
+
+        // Manejar el formulario de agregar producto
+        const addProductForm = document.getElementById('add-product-form');
+        addProductForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newProduct = {
+                title: document.getElementById('title').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                code: document.getElementById('code').value.trim(),
+                price: parseFloat(document.getElementById('price').value),
+                stock: parseInt(document.getElementById('stock').value),
+                category: document.getElementById('category').value.trim(),
+                thumbnails: []
+            };
+
+            // Validar que los campos no estén vacíos después de recortar
+            if (
+                !newProduct.title ||
+                !newProduct.description ||
+                !newProduct.code ||
+                isNaN(newProduct.price) ||
+                isNaN(newProduct.stock) ||
+                !newProduct.category
+            ) {
+                showToast('Por favor, completa todos los campos correctamente.', 'warning');
+                return;
+            }
+
+            // Emitir el evento para agregar un nuevo producto
+            socket.emit('newProduct', newProduct);
+            addProductForm.reset();
+        });
+
+        // Delegación de eventos para "Eliminar", "Modificar" y "Cancelar"
+        document.getElementById('products-list').addEventListener('click', (e) => {
+            if (e.target && e.target.matches('button.delete-btn')) {
+                const li = e.target.closest('li');
+                const productId = li.getAttribute('data-id');
+                const productTitle = li.querySelector('.fw-bold').textContent;
+
+                // Configurar el modal para eliminar
+                currentAction = 'delete';
+                currentProductId = productId;
+                modalTitle.textContent = 'Confirmar Eliminación';
+                modalMessage.textContent = `¿Estás seguro de que deseas eliminar el producto "${productTitle}"?`;
+                confirmActionBtn.className = 'btn btn-danger';
+                confirmActionBtn.textContent = 'Eliminar';
+
+                // Mostrar el modal
+                confirmationModal.show();
+            }
+
+            if (e.target && e.target.matches('button.modify-btn')) {
+                const li = e.target.closest('li');
+                const productId = li.getAttribute('data-id');
+                const productTitle = li.querySelector('.fw-bold').textContent;
+
+                // Mostrar el formulario de edición
+                const editForm = li.querySelector('.edit-form');
+                editForm.style.display = 'block';
+            }
+
+            if (e.target && e.target.matches('button.cancel-btn')) {
+                const li = e.target.closest('li');
+                const editForm = li.querySelector('.edit-form');
+                editForm.style.display = 'none'; // Ocultar el formulario de edición
+            }
+        });
+
+        // Manejar el envío del formulario de edición
+        document.getElementById('products-list').addEventListener('submit', (e) => {
+            if (e.target && e.target.matches('.edit-form')) {
+                e.preventDefault();
+                const li = e.target.closest('li');
+                const productId = li.getAttribute('data-id');
+                const productTitle = li.querySelector('.fw-bold').textContent;
+
+                // Configurar el modal para modificar
+                currentAction = 'modify';
+                currentProductId = productId;
+                modalTitle.textContent = 'Confirmar Modificación';
+                modalMessage.textContent = `¿Estás seguro de que deseas modificar el producto "${productTitle}"?`;
+                confirmActionBtn.className = 'btn btn-primary';
+                confirmActionBtn.textContent = 'Modificar';
+
+                // Mostrar el modal
+                confirmationModal.show();
+
+                // Guardar los datos actualizados temporalmente
+                li.dataset.updatedData = JSON.stringify({
+                    id: productId,
+                    title: li.querySelector('.edit-title').value.trim(),
+                    description: li.querySelector('.edit-description').value.trim(),
+                    code: li.querySelector('.edit-code').value.trim(),
+                    price: parseFloat(li.querySelector('.edit-price').value),
+                    stock: parseInt(li.querySelector('.edit-stock').value),
+                    category: li.querySelector('.edit-category').value.trim(),
+                    thumbnails: []
+                });
+            }
+        });
+
+        // Manejar la confirmación en el modal
+        confirmActionBtn.addEventListener('click', () => {
+            if (currentAction === 'delete') {
+                // Emitir el evento para eliminar el producto
+                socket.emit('deleteProduct', currentProductId);
+                showToast('Producto eliminado exitosamente', 'success');
+            }
+
+            if (currentAction === 'modify') {
+                const li = document.querySelector(`li[data-id="${currentProductId}"]`);
+                const updatedData = JSON.parse(li.dataset.updatedData);
+
+                // Validar que los campos no estén vacíos después de recortar
+                if (
+                    !updatedData.title ||
+                    !updatedData.description ||
+                    !updatedData.code ||
+                    isNaN(updatedData.price) ||
+                    isNaN(updatedData.stock) ||
+                    !updatedData.category
+                ) {
+                    showToast('Por favor, completa todos los campos correctamente.', 'warning');
+                    return;
+                }
+
+                // Emitir el evento para modificar el producto
+                socket.emit('modifyProduct', updatedData);
+                showToast('Producto modificado exitosamente', 'success');
+
+                // Actualizar los datos en el DOM
+                renderProducts([...JSON.parse(document.getElementById('products-list').dataset.products || '[]')]);
+            }
+
+            // Ocultar el modal después de la acción
+            confirmationModal.hide();
+        });
+
+        // Inicializar la lista de productos al conectar
+        socket.on('connect', () => {
+            console.log('Conectado al servidor');
+        });
+
+        // Manejar desconexión
+        socket.on('disconnect', () => {
+            console.log('Desconectado del servidor');
+        });
+    });
 </script>
