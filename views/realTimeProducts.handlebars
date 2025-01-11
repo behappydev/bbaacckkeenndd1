@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Productos en Tiempo Real</title>
+    <script src="/socket.io/socket.io.js"></script> 
+</head>
+<body>
+    <h1>Productos en Tiempo Real</h1>
+    <ul id="products-list">
+        {{#each products}}
+            <li data-id="{{this.id}}">
+                <strong>{{this.title}}</strong> - {{this.description}} - ${{this.price}}
+                <button class="delete-btn">Eliminar</button>
+            </li>
+        {{/each}}
+    </ul>
+
+    <h2>Agregar Nuevo Producto</h2>
+    <form id="add-product-form">
+        <input type="text" id="title" placeholder="Título" required>
+        <input type="text" id="description" placeholder="Descripción" required>
+        <input type="text" id="code" placeholder="Código" required>
+        <input type="number" id="price" placeholder="Precio" required>
+        <input type="number" id="stock" placeholder="Stock" required>
+        <input type="text" id="category" placeholder="Categoría" required>
+        <button type="submit">Agregar Producto</button>
+    </form>
+
+    <script>
+        const socket = io();
+
+        // Función para renderizar la lista de productos
+        const renderProducts = (products) => {
+            const productsList = document.getElementById('products-list');
+            productsList.innerHTML = ''; // Limpiar la lista actual
+
+            products.forEach(product => {
+                const li = document.createElement('li');
+                li.setAttribute('data-id', product.id);
+                li.innerHTML = `
+                    <strong>${product.title}</strong> - ${product.description} - $${product.price}
+                    <button class="delete-btn">Eliminar</button>
+                `;
+                productsList.appendChild(li);
+            });
+        };
+
+        // Escuchar actualizaciones de productos
+        socket.on('updateProducts', (products) => {
+            renderProducts(products);
+        });
+
+        // Manejar el formulario de agregar producto
+        const form = document.getElementById('add-product-form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newProduct = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                code: document.getElementById('code').value,
+                price: parseFloat(document.getElementById('price').value),
+                stock: parseInt(document.getElementById('stock').value),
+                category: document.getElementById('category').value,
+                thumbnails: []
+            };
+            socket.emit('newProduct', newProduct);
+            form.reset();
+        });
+
+        // Agregar evento para eliminar producto usando delegación de eventos
+        document.getElementById('products-list').addEventListener('click', (e) => {
+            if(e.target && e.target.matches('button.delete-btn')) {
+                const li = e.target.closest('li');
+                const productId = li.getAttribute('data-id');
+                socket.emit('deleteProduct', productId);
+            }
+        });
+    </script>
+</body>
+</html>

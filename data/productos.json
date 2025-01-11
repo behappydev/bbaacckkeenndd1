@@ -26,5 +26,16 @@
       "camiseta1.jpg",
       "camiseta2.jpg"
     ]
+  },
+  {
+    "id": "4",
+    "title": "lechuga",
+    "description": "lechuga mantecosa",
+    "code": "420420",
+    "price": 420,
+    "status": true,
+    "stock": 2,
+    "category": "Verdu",
+    "thumbnails": []
   }
 ]
