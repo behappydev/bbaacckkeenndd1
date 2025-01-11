@@ -1,12 +1,55 @@
 body {
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
 }
 
-h1,
-h2 {
-  color: #333;
+/* Estilos para las tarjetas de productos en home.handlebars */
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
 }
 
-button {
-  cursor: pointer;
+/* Estilos para la lista de productos en tiempo real */
+.list-group-item {
+  position: relative;
+}
+
+/* Estilos para los formularios de edición */
+.edit-form {
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease-in-out;
+}
+
+/* Estilos para botones pequeños */
+.btn-sm {
+  min-width: 80px;
+}
+
+/* Responsividad */
+@media (max-width: 576px) {
+  .card-img-top {
+    height: 150px;
+  }
+
+  #add-product-form input {
+    width: 100%;
+  }
+}
+
+/* Estilos para las alertas */
+#alert-area .alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+}
+
+/* Estilos para modales (si se utilizan en el futuro) */
+.modal-header {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.modal-footer {
+  justify-content: flex-start;
 }

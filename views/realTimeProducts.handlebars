@@ -1,133 +1,253 @@
 <!-- views/realTimeProducts.handlebars -->
-<h1>Productos en Tiempo Real</h1>
-<ul id="products-list">
-    {{#each products}}
-        <li data-id="{{this.id}}">
-            <strong>{{this.title}}</strong> - {{this.description}} - ${{this.price}}
-            <button class="modify-btn">Modificar</button>
-            <button class="delete-btn">Eliminar</button>
-            
-            <!-- Formulario de edición -->
-            <form class="edit-form">
-                <input type="text" class="edit-title" placeholder="Título" value="{{this.title}}" required>
-                <input type="text" class="edit-description" placeholder="Descripción" value="{{this.description}}" required>
-                <input type="text" class="edit-code" placeholder="Código" value="{{this.code}}" required>
-                <input type="number" class="edit-price" placeholder="Precio" value="{{this.price}}" required>
-                <input type="number" class="edit-stock" placeholder="Stock" value="{{this.stock}}" required>
-                <input type="text" class="edit-category" placeholder="Categoría" value="{{this.category}}" required>
-                <button type="submit">Guardar</button>
-                <button type="button" class="cancel-btn">Cancelar</button>
-            </form>
-        </li>
-    {{/each}}
-</ul>
+<div class="container mt-5">
+  <h1 class="mb-4 text-center">Productos en Tiempo Real</h1>
 
-<h2>Agregar Nuevo Producto</h2>
-<form id="add-product-form">
-    <input type="text" id="title" placeholder="Título" required>
-    <input type="text" id="description" placeholder="Descripción" required>
-    <input type="text" id="code" placeholder="Código" required>
-    <input type="number" id="price" placeholder="Precio" required>
-    <input type="number" id="stock" placeholder="Stock" required>
-    <input type="text" id="category" placeholder="Categoría" required>
-    <button type="submit">Agregar Producto</button>
-</form>
+  <!-- Formulario para agregar nuevo producto -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Agregar Nuevo Producto</h5>
+    </div>
+    <div class="card-body">
+      <form id="add-product-form">
+        <div class="mb-3">
+          <input
+            type="text"
+            id="title"
+            class="form-control"
+            placeholder="Título"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="text"
+            id="description"
+            class="form-control"
+            placeholder="Descripción"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="text"
+            id="code"
+            class="form-control"
+            placeholder="Código"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="number"
+            id="price"
+            class="form-control"
+            placeholder="Precio"
+            step="0.01"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="number"
+            id="stock"
+            class="form-control"
+            placeholder="Stock"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="text"
+            id="category"
+            class="form-control"
+            placeholder="Categoría"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-success">Agregar Producto</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lista de productos -->
+  <ul class="list-group" id="products-list">
+    {{#each products}}
+      <li
+        class="list-group-item d-flex justify-content-between align-items-start"
+        data-id="{{this.id}}"
+      >
+        <div class="ms-2 me-auto">
+          <div class="fw-bold">{{this.title}}</div>
+          <p>{{this.description}}</p>
+          <p><strong>Precio:</strong> ${{this.price}}</p>
+          <p><strong>Categoría:</strong> {{this.category}}</p>
+          <p><strong>Stock:</strong> {{this.stock}}</p>
+          <p><strong>Código:</strong> {{this.code}}</p>
+          <p><strong>Estado:</strong>
+            {{#if this.status}}Activo{{else}}Inactivo{{/if}}</p>
+        </div>
+        <div>
+          <button
+            class="btn btn-warning btn-sm modify-btn me-2"
+          >Modificar</button>
+          <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+        </div>
+
+        <!-- Formulario de edición -->
+        <form class="edit-form mt-3 p-3 border rounded" style="display: none;">
+          <div class="mb-3">
+            <input
+              type="text"
+              class="form-control edit-title"
+              placeholder="Título"
+              value="{{this.title}}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="text"
+              class="form-control edit-description"
+              placeholder="Descripción"
+              value="{{this.description}}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="text"
+              class="form-control edit-code"
+              placeholder="Código"
+              value="{{this.code}}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="number"
+              class="form-control edit-price"
+              placeholder="Precio"
+              step="0.01"
+              value="{{this.price}}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="number"
+              class="form-control edit-stock"
+              placeholder="Stock"
+              value="{{this.stock}}"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              type="text"
+              class="form-control edit-category"
+              placeholder="Categoría"
+              value="{{this.category}}"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn btn-primary btn-sm me-2"
+          >Guardar</button>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm cancel-btn"
+          >Cancelar</button>
+        </form>
+      </li>
+    {{/each}}
+  </ul>
+</div>
 
 <script>
-    const socket = io();
-
-    // Función para renderizar la lista de productos
-    const renderProducts = (products) => {
-        const productsList = document.getElementById('products-list');
-        productsList.innerHTML = ''; // Limpiar la lista actual
-
-        products.forEach(product => {
-            const li = document.createElement('li');
-            li.setAttribute('data-id', product.id);
-            li.innerHTML = `
-                <strong>${product.title}</strong> - ${product.description} - $${product.price}
-                <button class="modify-btn">Modificar</button>
-                <button class="delete-btn">Eliminar</button>
-                
-                <!-- Formulario de edición -->
-                <form class="edit-form">
-                    <input type="text" class="edit-title" placeholder="Título" value="${product.title}" required>
-                    <input type="text" class="edit-description" placeholder="Descripción" value="${product.description}" required>
-                    <input type="text" class="edit-code" placeholder="Código" value="${product.code}" required>
-                    <input type="number" class="edit-price" placeholder="Precio" value="${product.price}" required>
-                    <input type="number" class="edit-stock" placeholder="Stock" value="${product.stock}" required>
-                    <input type="text" class="edit-category" placeholder="Categoría" value="${product.category}" required>
-                    <button type="submit">Guardar</button>
-                    <button type="button" class="cancel-btn">Cancelar</button>
-                </form>
-            `;
-            productsList.appendChild(li);
-        });
-    };
-
-    // Escuchar actualizaciones de productos
-    socket.on('updateProducts', (products) => {
-        renderProducts(products);
-    });
-
-    // Manejar el formulario de agregar producto
-    const form = document.getElementById('add-product-form');
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newProduct = {
-            title: document.getElementById('title').value,
-            description: document.getElementById('description').value,
-            code: document.getElementById('code').value,
-            price: parseFloat(document.getElementById('price').value),
-            stock: parseInt(document.getElementById('stock').value),
-            category: document.getElementById('category').value,
-            thumbnails: []
-        };
-        socket.emit('newProduct', newProduct);
-        form.reset();
-    });
-
-    // Delegación de eventos para "Eliminar", "Modificar" y "Cancelar"
-    document.getElementById('products-list').addEventListener('click', (e) => {
-        if(e.target && e.target.matches('button.delete-btn')) {
-            const li = e.target.closest('li');
-            const productId = li.getAttribute('data-id');
-            socket.emit('deleteProduct', productId);
-        }
-
-        if(e.target && e.target.matches('button.modify-btn')) {
-            const li = e.target.closest('li');
-            const editForm = li.querySelector('.edit-form');
-            editForm.style.display = 'block'; // Mostrar el formulario de edición
-        }
-
-        if(e.target && e.target.matches('button.cancel-btn')) {
-            const li = e.target.closest('li');
-            const editForm = li.querySelector('.edit-form');
-            editForm.style.display = 'none'; // Ocultar el formulario de edición
-        }
-    });
-
-    // Manejar el envío del formulario de edición
-    document.getElementById('products-list').addEventListener('submit', (e) => {
-        if(e.target && e.target.matches('.edit-form')) {
-            e.preventDefault();
-            const li = e.target.closest('li');
-            const productId = li.getAttribute('data-id');
-
-            const updatedProduct = {
-                id: productId,
-                title: li.querySelector('.edit-title').value,
-                description: li.querySelector('.edit-description').value,
-                code: li.querySelector('.edit-code').value,
-                price: parseFloat(li.querySelector('.edit-price').value),
-                stock: parseInt(li.querySelector('.edit-stock').value),
-                category: li.querySelector('.edit-category').value,
-                thumbnails: []
-            };
-
-            socket.emit('modifyProduct', updatedProduct);
-            e.target.style.display = 'none'; // Ocultar el formulario después de enviar
-        }
-    });
+  const socket = io(); // Función para mostrar alertas const showAlert =
+  (message, type = 'success') => { const alertArea =
+  document.getElementById('alert-area'); const alert =
+  document.createElement('div'); alert.className = `alert alert-${type}
+  alert-dismissible fade show`; alert.role = 'alert'; alert.innerHTML = `
+  ${message} <button type="button" class="btn-close" data-bs-dismiss="alert"
+  aria-label="Cerrar"></button> `; alertArea.appendChild(alert); // Eliminar la
+  alerta después de 3 segundos setTimeout(() => { const alertInstance =
+  bootstrap.Alert.getOrCreateInstance(alert); alertInstance.close(); }, 3000);
+  }; // Función para renderizar la lista de productos const renderProducts =
+  (products) => { const productsList = document.getElementById('products-list');
+  productsList.innerHTML = ''; // Limpiar la lista actual
+  products.forEach(product => { const li = document.createElement('li');
+  li.className = 'list-group-item d-flex justify-content-between
+  align-items-start'; li.setAttribute('data-id', product.id); li.innerHTML = `
+  <div class="ms-2 me-auto"> <div class="fw-bold">${product.title}</div>
+  <p>${product.description}</p> <p><strong>Precio:</strong>
+  $${product.price}</p> <p><strong>Categoría:</strong> ${product.category}</p>
+  <p><strong>Stock:</strong> ${product.stock}</p> <p><strong>Código:</strong>
+  ${product.code}</p> <p><strong>Estado:</strong> ${product.status ? 'Activo' :
+  'Inactivo'}</p> </div> <div> <button class="btn btn-warning btn-sm modify-btn
+  me-2">Modificar</button> <button class="btn btn-danger btn-sm
+  delete-btn">Eliminar</button> </div> <!-- Formulario de edición --> <form
+  class="edit-form mt-3 p-3 border rounded" style="display: none;"> <div
+  class="mb-3"> <input type="text" class="form-control edit-title"
+  placeholder="Título" value="${product.title}" required> </div> <div
+  class="mb-3"> <input type="text" class="form-control edit-description"
+  placeholder="Descripción" value="${product.description}" required> </div> <div
+  class="mb-3"> <input type="text" class="form-control edit-code"
+  placeholder="Código" value="${product.code}" required> </div> <div
+  class="mb-3"> <input type="number" class="form-control edit-price"
+  placeholder="Precio" step="0.01" value="${product.price}" required> </div>
+  <div class="mb-3"> <input type="number" class="form-control edit-stock"
+  placeholder="Stock" value="${product.stock}" required> </div> <div
+  class="mb-3"> <input type="text" class="form-control edit-category"
+  placeholder="Categoría" value="${product.category}" required> </div> <button
+  type="submit" class="btn btn-primary btn-sm me-2">Guardar</button> <button
+  type="button" class="btn btn-secondary btn-sm cancel-btn">Cancelar</button>
+  </form> `; productsList.appendChild(li); }); }; // Escuchar actualizaciones de
+  productos socket.on('updateProducts', (products) => {
+  renderProducts(products); showAlert('Lista de productos actualizada', 'info');
+  }); // Escuchar mensajes de éxito socket.on('successMessage', (msg) => {
+  showAlert(msg, 'success'); }); // Escuchar mensajes de error
+  socket.on('errorMessage', (msg) => { showAlert(msg, 'danger'); }); // Manejar
+  el formulario de agregar producto const form =
+  document.getElementById('add-product-form'); form.addEventListener('submit',
+  (e) => { e.preventDefault(); const newProduct = { title:
+  document.getElementById('title').value, description:
+  document.getElementById('description').value, code:
+  document.getElementById('code').value, price:
+  parseFloat(document.getElementById('price').value), stock:
+  parseInt(document.getElementById('stock').value), category:
+  document.getElementById('category').value, thumbnails: [] };
+  socket.emit('newProduct', newProduct); showAlert('Producto agregado
+  exitosamente'); form.reset(); }); // Delegación de eventos para "Eliminar",
+  "Modificar" y "Cancelar"
+  document.getElementById('products-list').addEventListener('click', (e) => {
+  if(e.target && e.target.matches('button.delete-btn')) { const li =
+  e.target.closest('li'); const productId = li.getAttribute('data-id'); const
+  productTitle = li.querySelector('.fw-bold').textContent; // Mostrar
+  confirmación antes de eliminar const confirmDelete = confirm(`¿Estás seguro de
+  que deseas eliminar el producto "${productTitle}"?`); if (confirmDelete) {
+  socket.emit('deleteProduct', productId); } } if(e.target &&
+  e.target.matches('button.modify-btn')) { const li = e.target.closest('li');
+  const editForm = li.querySelector('.edit-form'); editForm.style.display =
+  'block'; // Mostrar el formulario de edición } if(e.target &&
+  e.target.matches('button.cancel-btn')) { const li = e.target.closest('li');
+  const editForm = li.querySelector('.edit-form'); editForm.style.display =
+  'none'; // Ocultar el formulario de edición } }); // Manejar el envío del
+  formulario de edición
+  document.getElementById('products-list').addEventListener('submit', (e) => {
+  if(e.target && e.target.matches('.edit-form')) { e.preventDefault(); const li
+  = e.target.closest('li'); const productId = li.getAttribute('data-id'); const
+  productTitle = li.querySelector('.fw-bold').textContent; // Mostrar
+  confirmación antes de modificar const confirmModify = confirm(`¿Estás seguro
+  de que deseas modificar el producto "${productTitle}"?`); if (!confirmModify)
+  { e.target.style.display = 'none'; return; } const updatedProduct = { id:
+  productId, title: li.querySelector('.edit-title').value, description:
+  li.querySelector('.edit-description').value, code:
+  li.querySelector('.edit-code').value, price:
+  parseFloat(li.querySelector('.edit-price').value), stock:
+  parseInt(li.querySelector('.edit-stock').value), category:
+  li.querySelector('.edit-category').value, thumbnails: [] };
+  socket.emit('modifyProduct', updatedProduct); e.target.style.display = 'none';
+  // Ocultar el formulario después de enviar } });
 </script>

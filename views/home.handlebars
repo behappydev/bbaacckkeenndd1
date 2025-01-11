@@ -1,12 +1,36 @@
 <!-- views/home.handlebars -->
-<h1>Lista de Productos</h1>
-<ul>
-  {{#each products}}
-    <li>
-      <strong>{{this.title}}</strong>
-      -
-      {{this.description}}
-      - ${{this.price}}
-    </li>
-  {{/each}}
-</ul>
+<div class="container mt-5">
+  <h1 class="mb-4 text-center">Lista de Productos</h1>
+  <div class="row">
+    {{#each products}}
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          {{#if this.thumbnails.length}}
+            <img
+              src="/images/{{lookup this.thumbnails 0}}"
+              class="card-img-top"
+              alt="{{this.title}}"
+            />
+          {{else}}
+            <img
+              src="https://via.placeholder.com/300x200.png?text=Sin+Imagen"
+              class="card-img-top"
+              alt="{{this.title}}"
+            />
+          {{/if}}
+          <div class="card-body">
+            <h5 class="card-title">{{this.title}}</h5>
+            <p class="card-text">{{this.description}}</p>
+            <p class="card-text"><strong>Precio:</strong> ${{this.price}}</p>
+            <p class="card-text"><strong>Categoría:</strong>
+              {{this.category}}</p>
+            <p class="card-text"><strong>Stock:</strong> {{this.stock}}</p>
+            <p class="card-text"><strong>Código:</strong> {{this.code}}</p>
+            <p class="card-text"><strong>Estado:</strong>
+              {{#if this.status}}Activo{{else}}Inactivo{{/if}}</p>
+          </div>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+</div>

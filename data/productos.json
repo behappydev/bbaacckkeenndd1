@@ -1,5 +1,16 @@
 [
   {
+    "id": "1",
+    "title": "Camiseta Deportiva",
+    "description": "Camiseta de alto rendimiento para deportes",
+    "code": "CD001",
+    "price": 29.99,
+    "status": true,
+    "stock": 100,
+    "category": "Ropa Deportiva",
+    "thumbnails": ["camiseta1.jpg", "camiseta2.jpg"]
+  },
+  {
     "id": "2",
     "title": "Pantalón Jogger",
     "description": "Pantalón cómodo para entrenamiento",
@@ -8,20 +19,6 @@
     "status": true,
     "stock": 50,
     "category": "Ropa Deportiva",
-    "thumbnails": [
-      "pantalon1.jpg",
-      "pantalon2.jpg"
-    ]
-  },
-  {
-    "id": "3",
-    "title": "Lechuga",
-    "description": "Lechuga Mantecosa",
-    "code": "420420",
-    "price": 420,
-    "status": true,
-    "stock": 4,
-    "category": "Verdulería",
-    "thumbnails": []
+    "thumbnails": ["pantalon1.jpg", "pantalon2.jpg"]
   }
 ]

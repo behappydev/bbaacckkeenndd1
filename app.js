@@ -11,7 +11,13 @@ const productsController = require("./controllers/products.controller");
 const cartsController = require("./controllers/carts.controller");
 
 // Configurar Handlebars
-app.engine("handlebars", exphbs.engine());
+app.engine(
+  "handlebars",
+  exphbs.engine({
+    defaultLayout: "main",
+    layoutsDir: __dirname + "/views/layouts/",
+  })
+);
 app.set("view engine", "handlebars");
 app.set("views", __dirname + "/views");
 
@@ -24,7 +30,7 @@ const viewsRouter = require("./routers/views.router");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos (si tienes CSS, JS del frontend, imágenes, etc.)
+// Servir archivos estáticos (CSS, JS, imágenes, etc.)
 app.use(express.static(__dirname + "/public"));
 
 // Rutas principales
@@ -59,8 +65,10 @@ io.on("connection", (socket) => {
       const newProduct = await productsController.create(productData);
       const allProducts = await productsController.getAll();
       io.emit("updateProducts", allProducts); // Emitir a todos los clientes
+      socket.emit("successMessage", "Producto agregado exitosamente.");
     } catch (error) {
       console.error("Error al agregar producto:", error);
+      socket.emit("errorMessage", "Error al agregar el producto.");
     }
   });
 
@@ -70,8 +78,10 @@ io.on("connection", (socket) => {
       await productsController.delete(productId);
       const allProducts = await productsController.getAll();
       io.emit("updateProducts", allProducts);
+      socket.emit("successMessage", "Producto eliminado exitosamente.");
     } catch (error) {
       console.error("Error al eliminar producto:", error);
+      socket.emit("errorMessage", "Error al eliminar el producto.");
     }
   });
 
@@ -81,8 +91,10 @@ io.on("connection", (socket) => {
       await productsController.update(updatedProduct.id, updatedProduct);
       const allProducts = await productsController.getAll();
       io.emit("updateProducts", allProducts);
+      socket.emit("successMessage", "Producto modificado exitosamente.");
     } catch (error) {
       console.error("Error al modificar producto:", error);
+      socket.emit("errorMessage", "Error al modificar el producto.");
     }
   });
 
