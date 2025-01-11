@@ -1,41 +1,27 @@
 [
   {
-    "id": "1",
-    "title": "Camiseta Deportiva",
-    "description": "Camiseta de alto rendimiento para deportes",
-    "code": "CD001",
-    "price": 29.99,
+    "id": "2",
+    "title": "Pantalón Jogger",
+    "description": "Pantalón cómodo para entrenamiento",
+    "code": "PJ002",
+    "price": 49.99,
     "status": true,
-    "stock": 150,
+    "stock": 50,
     "category": "Ropa Deportiva",
     "thumbnails": [
-      "camiseta1.jpg",
-      "camiseta2.jpg"
+      "pantalon1.jpg",
+      "pantalon2.jpg"
     ]
   },
   {
-    "id": "2",
-    "title": "Camiseta Playera",
-    "description": "Camiseta playera, especialmente para el verano",
-    "code": "CD002",
-    "price": 39.99,
-    "status": true,
-    "stock": 250,
-    "category": "Ropa",
-    "thumbnails": [
-      "camiseta1.jpg",
-      "camiseta2.jpg"
-    ]
-  },
-  {
-    "id": "4",
-    "title": "lechuga",
-    "description": "lechuga mantecosa",
+    "id": "3",
+    "title": "Lechuga",
+    "description": "Lechuga Mantecosa",
     "code": "420420",
     "price": 420,
     "status": true,
-    "stock": 2,
-    "category": "Verdu",
+    "stock": 4,
+    "category": "Verdulería",
     "thumbnails": []
   }
 ]

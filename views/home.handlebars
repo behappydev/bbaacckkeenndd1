@@ -1,8 +1,12 @@
+<!-- views/home.handlebars -->
 <h1>Lista de Productos</h1>
 <ul>
-    {{#each products}}
-        <li>
-            <strong>{{this.title}}</strong> - {{this.description}} - ${{this.price}}
-        </li>
-    {{/each}}
+  {{#each products}}
+    <li>
+      <strong>{{this.title}}</strong>
+      -
+      {{this.description}}
+      - ${{this.price}}
+    </li>
+  {{/each}}
 </ul>

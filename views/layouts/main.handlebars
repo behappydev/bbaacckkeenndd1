@@ -1,11 +1,20 @@
-<!DOCTYPE html>
+<!-- views/layouts/main.handlebars -->
+
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>E-commerce Backend 1</title>
-    <script src="/socket.io/socket.io.js"></script> 
-</head>
-<body>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; } ul {
+      list-style-type: none; padding: 0; } li { margin-bottom: 10px; }
+      .edit-form { display: none; margin-top: 10px; } .edit-form input {
+      display: block; margin-bottom: 5px; width: 200px; padding: 5px; } button {
+      margin-left: 5px; padding: 5px 10px; }
+    </style>
+  </head>
+  <body>
     {{{body}}}
-</body>
+  </body>
 </html>
