@@ -8,7 +8,7 @@
             <h5 class="mb-0">Agregar Nuevo Producto</h5>
         </div>
         <div class="card-body">
-            <form id="add-product-form">
+            <form id="add-product-form" enctype="multipart/form-data">
                 <div class="mb-3">
                     <input type="text" id="title" class="form-control" placeholder="Título" required>
                 </div>
@@ -27,6 +27,24 @@
                 <div class="mb-3">
                     <input type="text" id="category" class="form-control" placeholder="Categoría" required>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Agregar Imágenes</label>
+                    <!-- Opciones para agregar imágenes: URL o Archivo -->
+                    <div class="d-flex mb-2">
+                        <button type="button" class="btn btn-outline-secondary me-2" id="toggle-url-input">Agregar por URL</button>
+                        <button type="button" class="btn btn-outline-secondary" id="toggle-file-input">Agregar por Archivo</button>
+                    </div>
+                    <!-- Contenedor para agregar imágenes por URL -->
+                    <div id="url-input-container" class="mb-3" style="display: none;">
+                        <input type="text" id="image-urls" class="form-control" placeholder="Ingresa URLs separadas por comas">
+                        <div id="url-image-preview" class="mt-2 d-flex flex-wrap"></div>
+                    </div>
+                    <!-- Contenedor para agregar imágenes por Archivo -->
+                    <div id="file-input-container" class="mb-3" style="display: none;">
+                        <input type="file" id="image-files" class="form-control" accept="image/*" multiple>
+                        <div id="file-image-preview" class="mt-2 d-flex flex-wrap"></div>
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-success">Agregar Producto</button>
             </form>
         </div>
@@ -42,7 +60,7 @@
 <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header" :class="{'bg-warning': actionType === 'delete', 'bg-info': actionType === 'modify'}">
+      <div class="modal-header" :class="{'bg-danger': actionType === 'delete', 'bg-info': actionType === 'modify'}">
         <h5 class="modal-title" id="confirmationModalLabel">{{ modalTitle }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
@@ -72,6 +90,7 @@
         // Variables para manejar acciones en el modal
         let currentAction = null; // 'modify' o 'delete'
         let currentProductId = null;
+        let updatedData = null; // Datos actualizados para modificar
 
         // Referencias al modal
         const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'), {
@@ -81,7 +100,7 @@
         const modalMessage = document.querySelector('#confirmationModal .modal-body');
         const confirmActionBtn = document.getElementById('confirm-action-btn');
 
-        // Función para mostrar toasts
+        // Funciones para mostrar toasts
         const showToast = (message, type = 'success') => {
             const toastContainer = document.getElementById('toast-container');
             const toastId = `toast-${Date.now()}`;
@@ -113,42 +132,64 @@
 
             products.forEach(product => {
                 const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-start';
+                li.className = 'list-group-item';
                 li.setAttribute('data-id', product.id);
                 li.innerHTML = `
-                    <div class="ms-2 me-auto">
-                        <div class="fw-bold">${product.title}</div>
-                        <p>${product.description}</p>
-                        <p><strong>Precio:</strong> $${product.price.toFixed(2)}</p>
-                        <p><strong>Categoría:</strong> ${product.category}</p>
-                        <p><strong>Stock:</strong> ${product.stock}</p>
-                        <p><strong>Código:</strong> ${product.code}</p>
-                        <p><strong>Estado:</strong> ${product.status ? 'Activo' : 'Inactivo'}</p>
-                    </div>
-                    <div>
-                        <button class="btn btn-warning btn-sm modify-btn me-2">Modificar</button>
-                        <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="fw-bold">${sanitizeHTML(product.title)}</h5>
+                            <p>${sanitizeHTML(product.description)}</p>
+                            <p><strong>Precio:</strong> $${parseFloat(product.price).toFixed(2)}</p>
+                            <p><strong>Categoría:</strong> ${sanitizeHTML(product.category)}</p>
+                            <p><strong>Stock:</strong> ${parseInt(product.stock)}</p>
+                            <p><strong>Código:</strong> ${sanitizeHTML(product.code)}</p>
+                            <p><strong>Estado:</strong> ${product.status ? 'Activo' : 'Inactivo'}</p>
+                            ${renderImages(product.thumbnails)}
+                        </div>
+                        <div>
+                            <button class="btn btn-warning btn-sm modify-btn me-2">Modificar</button>
+                            <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+                        </div>
                     </div>
 
                     <!-- Formulario de edición -->
-                    <form class="edit-form mt-3 p-3 border rounded" style="display: none;">
+                    <form class="edit-form mt-3 p-3 border rounded" style="display: none;" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <input type="text" class="form-control edit-title" placeholder="Título" value="${product.title}" required>
+                            <input type="text" class="form-control edit-title" placeholder="Título" value="${sanitizeHTML(product.title)}" required>
                         </div>
                         <div class="mb-3">
-                            <input type="text" class="form-control edit-description" placeholder="Descripción" value="${product.description}" required>
+                            <input type="text" class="form-control edit-description" placeholder="Descripción" value="${sanitizeHTML(product.description)}" required>
                         </div>
                         <div class="mb-3">
-                            <input type="text" class="form-control edit-code" placeholder="Código" value="${product.code}" required>
+                            <input type="text" class="form-control edit-code" placeholder="Código" value="${sanitizeHTML(product.code)}" required>
                         </div>
                         <div class="mb-3">
-                            <input type="number" class="form-control edit-price" placeholder="Precio" step="0.01" value="${product.price}" required>
+                            <input type="number" class="form-control edit-price" placeholder="Precio" step="0.01" value="${parseFloat(product.price).toFixed(2)}" required>
                         </div>
                         <div class="mb-3">
-                            <input type="number" class="form-control edit-stock" placeholder="Stock" value="${product.stock}" required>
+                            <input type="number" class="form-control edit-stock" placeholder="Stock" value="${parseInt(product.stock)}" required>
                         </div>
                         <div class="mb-3">
-                            <input type="text" class="form-control edit-category" placeholder="Categoría" value="${product.category}" required>
+                            <input type="text" class="form-control edit-category" placeholder="Categoría" value="${sanitizeHTML(product.category)}" required>
+                        </div>
+                        <!-- Sección para agregar imágenes -->
+                        <div class="mb-3">
+                            <label class="form-label">Agregar Imágenes</label>
+                            <!-- Opciones para agregar imágenes: URL o Archivo -->
+                            <div class="d-flex mb-2">
+                                <button type="button" class="btn btn-outline-secondary me-2 toggle-edit-url-input">Agregar por URL</button>
+                                <button type="button" class="btn btn-outline-secondary toggle-edit-file-input">Agregar por Archivo</button>
+                            </div>
+                            <!-- Contenedor para agregar imágenes por URL -->
+                            <div class="edit-url-input-container mb-3" style="display: none;">
+                                <input type="text" class="form-control edit-image-urls" placeholder="Ingresa URLs separadas por comas">
+                                <div class="mt-2 edit-url-image-preview d-flex flex-wrap"></div>
+                            </div>
+                            <!-- Contenedor para agregar imágenes por Archivo -->
+                            <div class="edit-file-input-container mb-3" style="display: none;">
+                                <input type="file" class="form-control edit-image-files" accept="image/*" multiple>
+                                <div class="mt-2 edit-file-image-preview d-flex flex-wrap"></div>
+                            </div>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm me-2">Guardar</button>
                         <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancelar</button>
@@ -157,6 +198,115 @@
                 productsList.appendChild(li);
             });
         };
+
+        // Función para sanitizar HTML y prevenir XSS
+        const sanitizeHTML = (str) => {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        };
+
+        // Función para renderizar imágenes del producto
+        const renderImages = (thumbnails) => {
+            if (!thumbnails || thumbnails.length === 0) {
+                return `<p>No hay imágenes disponibles.</p>`;
+            }
+            let imagesHTML = '<div class="d-flex flex-wrap gap-2">';
+            thumbnails.forEach(img => {
+                imagesHTML += `
+                    <img src="${sanitizeHTML(img)}" alt="Imagen del producto" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
+                `;
+            });
+            imagesHTML += '</div>';
+            return imagesHTML;
+        };
+
+        // Función para previsualizar imágenes desde URLs
+        const previewImagesFromURLs = (input, previewContainer) => {
+            previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+            const urls = input.value.split(',').map(url => url.trim()).filter(url => url !== '');
+            if (urls.length === 0) return;
+
+            urls.forEach(url => {
+                // Validar que la URL sea válida y apunte a una imagen
+                if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url)) {
+                    showToast(`URL inválida o no es una imagen: ${url}`, 'warning');
+                    return;
+                }
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'img-thumbnail';
+                img.style.width = '100px';
+                img.style.height = '100px';
+                img.style.objectFit = 'cover';
+                img.onerror = () => {
+                    img.src = 'https://via.placeholder.com/100x100.png?text=No+Image';
+                };
+                previewContainer.appendChild(img);
+            });
+        };
+
+        // Función para previsualizar imágenes desde archivos
+        const previewImagesFromFiles = (input, previewContainer) => {
+            previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+            const files = input.files;
+            if (files) {
+                Array.from(files).forEach(file => {
+                    if (!file.type.startsWith('image/')) {
+                        showToast(`Archivo no válido: ${file.name}`, 'warning');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'img-thumbnail';
+                        img.style.width = '100px';
+                        img.style.height = '100px';
+                        img.style.objectFit = 'cover';
+                        previewContainer.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        };
+
+        // Toggle para mostrar/ocultar la sección de URL de imágenes en el formulario de agregar
+        const toggleUrlInputBtn = document.getElementById('toggle-url-input');
+        const toggleFileInputBtn = document.getElementById('toggle-file-input');
+        const urlInputContainer = document.getElementById('url-input-container');
+        const fileInputContainer = document.getElementById('file-input-container');
+
+        toggleUrlInputBtn.addEventListener('click', () => {
+            urlInputContainer.style.display = 'block';
+            fileInputContainer.style.display = 'none';
+        });
+
+        toggleFileInputBtn.addEventListener('click', () => {
+            fileInputContainer.style.display = 'block';
+            urlInputContainer.style.display = 'none';
+        });
+
+        // Toggle para mostrar/ocultar la sección de URL de imágenes en el formulario de edición
+        document.getElementById('products-list').addEventListener('click', (e) => {
+            if (e.target && e.target.matches('.toggle-edit-url-input')) {
+                const editForm = e.target.closest('.edit-form');
+                const urlContainer = editForm.querySelector('.edit-url-input-container');
+                const fileContainer = editForm.querySelector('.edit-file-input-container');
+                urlContainer.style.display = 'block';
+                fileContainer.style.display = 'none';
+            }
+
+            if (e.target && e.target.matches('.toggle-edit-file-input')) {
+                const editForm = e.target.closest('.edit-form');
+                const urlContainer = editForm.querySelector('.edit-url-input-container');
+                const fileContainer = editForm.querySelector('.edit-file-input-container');
+                fileContainer.style.display = 'block';
+                urlContainer.style.display = 'none';
+            }
+        });
 
         // Escuchar actualizaciones de productos
         socket.on('updateProducts', (products) => {
@@ -176,38 +326,119 @@
 
         // Manejar el formulario de agregar producto
         const addProductForm = document.getElementById('add-product-form');
+        const urlImageInput = document.getElementById('image-urls');
+        const urlImagePreview = document.getElementById('url-image-preview');
+        const fileImageInput = document.getElementById('image-files');
+        const fileImagePreview = document.getElementById('file-image-preview');
+
+        // Previsualizar imágenes al ingresar URLs
+        urlImageInput.addEventListener('input', () => {
+            previewImagesFromURLs(urlImageInput, urlImagePreview);
+        });
+
+        // Previsualizar imágenes al seleccionar archivos
+        fileImageInput.addEventListener('change', () => {
+            previewImagesFromFiles(fileImageInput, fileImagePreview);
+        });
+
         addProductForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const newProduct = {
-                title: document.getElementById('title').value.trim(),
-                description: document.getElementById('description').value.trim(),
-                code: document.getElementById('code').value.trim(),
-                price: parseFloat(document.getElementById('price').value),
-                stock: parseInt(document.getElementById('stock').value),
-                category: document.getElementById('category').value.trim(),
-                thumbnails: []
-            };
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const code = document.getElementById('code').value.trim();
+            const price = parseFloat(document.getElementById('price').value);
+            const stock = parseInt(document.getElementById('stock').value);
+            const category = document.getElementById('category').value.trim();
+            const urlImagesRaw = urlImageInput.value.trim();
+            const urlImages = urlImagesRaw.split(',').map(url => url.trim()).filter(url => url !== '');
+            const fileImages = fileImageInput.files;
 
-            // Validar que los campos no estén vacíos después de recortar
-            if (
-                !newProduct.title ||
-                !newProduct.description ||
-                !newProduct.code ||
-                isNaN(newProduct.price) ||
-                isNaN(newProduct.stock) ||
-                !newProduct.category
-            ) {
-                showToast('Por favor, completa todos los campos correctamente.', 'warning');
+            // Validar que los campos no estén vacíos
+            if (!title || !description || !code || isNaN(price) || isNaN(stock) || !category) {
+                showToast('Por favor, completa todos los campos obligatorios.', 'warning');
                 return;
             }
 
-            // Emitir el evento para agregar un nuevo producto
-            socket.emit('newProduct', newProduct);
-            addProductForm.reset();
+            // Determinar qué método de adición de imágenes se está utilizando
+            const isUsingURL = urlImages.length > 0 && urlInputContainer.style.display === 'block';
+            const isUsingFile = fileImages.length > 0 && fileInputContainer.style.display === 'block';
+
+            if (!isUsingURL && !isUsingFile) {
+                showToast('Por favor, elige un método para agregar imágenes: URL o Archivo.', 'warning');
+                return;
+            }
+
+            // Crear un objeto FormData para enviar las imágenes al servidor si se usan archivos
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('code', code);
+            formData.append('price', price);
+            formData.append('stock', stock);
+            formData.append('category', category);
+
+            if (isUsingURL) {
+                // Validar URLs
+                const invalidUrls = urlImages.filter(url => !/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url));
+                if (invalidUrls.length > 0) {
+                    showToast(`Las siguientes URLs no son válidas o no son imágenes: ${invalidUrls.join(', ')}`, 'warning');
+                    return;
+                }
+
+                // Agregar las URLs al formulario de datos
+                urlImages.forEach((url, index) => {
+                    formData.append(`thumbnails`, url);
+                });
+
+                // Emitir el evento para agregar un nuevo producto
+                socket.emit('newProduct', Object.fromEntries(formData));
+                showToast('Producto agregado exitosamente', 'success');
+                addProductForm.reset();
+                urlImagePreview.innerHTML = '';
+                fileImagePreview.innerHTML = '';
+            }
+
+            if (isUsingFile) {
+                // Agregar las imágenes al FormData
+                Array.from(fileImages).forEach(file => {
+                    formData.append('thumbnails', file);
+                });
+
+                // Enviar las imágenes al servidor y obtener las URLs
+                fetch('/api/products/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    const newProduct = {
+                        title,
+                        description,
+                        code,
+                        price,
+                        stock,
+                        category,
+                        thumbnails: data.thumbnails // URLs de las imágenes subidas
+                    };
+                    socket.emit('newProduct', newProduct);
+                    showToast('Producto agregado exitosamente', 'success');
+                    addProductForm.reset();
+                    urlImagePreview.innerHTML = '';
+                    fileImagePreview.innerHTML = '';
+                })
+                .catch(error => {
+                    console.error(error);
+                    showToast('Error al subir las imágenes.', 'danger');
+                });
+            }
         });
 
-        // Delegación de eventos para "Eliminar", "Modificar" y "Cancelar"
-        document.getElementById('products-list').addEventListener('click', (e) => {
+        // Delegación de eventos para "Eliminar" y "Modificar"
+        const productsList = document.getElementById('products-list');
+        productsList.addEventListener('click', (e) => {
             if (e.target && e.target.matches('button.delete-btn')) {
                 const li = e.target.closest('li');
                 const productId = li.getAttribute('data-id');
@@ -227,23 +458,13 @@
 
             if (e.target && e.target.matches('button.modify-btn')) {
                 const li = e.target.closest('li');
-                const productId = li.getAttribute('data-id');
-                const productTitle = li.querySelector('.fw-bold').textContent;
-
-                // Mostrar el formulario de edición
                 const editForm = li.querySelector('.edit-form');
                 editForm.style.display = 'block';
-            }
-
-            if (e.target && e.target.matches('button.cancel-btn')) {
-                const li = e.target.closest('li');
-                const editForm = li.querySelector('.edit-form');
-                editForm.style.display = 'none'; // Ocultar el formulario de edición
             }
         });
 
         // Manejar el envío del formulario de edición
-        document.getElementById('products-list').addEventListener('submit', (e) => {
+        productsList.addEventListener('submit', (e) => {
             if (e.target && e.target.matches('.edit-form')) {
                 e.preventDefault();
                 const li = e.target.closest('li');
@@ -261,17 +482,85 @@
                 // Mostrar el modal
                 confirmationModal.show();
 
-                // Guardar los datos actualizados temporalmente
-                li.dataset.updatedData = JSON.stringify({
-                    id: productId,
-                    title: li.querySelector('.edit-title').value.trim(),
-                    description: li.querySelector('.edit-description').value.trim(),
-                    code: li.querySelector('.edit-code').value.trim(),
-                    price: parseFloat(li.querySelector('.edit-price').value),
-                    stock: parseInt(li.querySelector('.edit-stock').value),
-                    category: li.querySelector('.edit-category').value.trim(),
-                    thumbnails: []
-                });
+                // Recopilar los datos actualizados
+                const editTitle = li.querySelector('.edit-title').value.trim();
+                const editDescription = li.querySelector('.edit-description').value.trim();
+                const editCode = li.querySelector('.edit-code').value.trim();
+                const editPrice = parseFloat(li.querySelector('.edit-price').value);
+                const editStock = parseInt(li.querySelector('.edit-stock').value);
+                const editCategory = li.querySelector('.edit-category').value.trim();
+
+                // Determinar qué método de adición de imágenes se está utilizando en edición
+                const editUrlInputContainer = li.querySelector('.edit-url-input-container');
+                const editFileInputContainer = li.querySelector('.edit-file-input-container');
+                const isUsingURL = editUrlInputContainer.style.display === 'block';
+                const isUsingFile = editFileInputContainer.style.display === 'block';
+
+                let thumbnails = [];
+
+                if (isUsingURL) {
+                    const editImageUrlsRaw = li.querySelector('.edit-image-urls').value.trim();
+                    const editImageUrls = editImageUrlsRaw.split(',').map(url => url.trim()).filter(url => url !== '');
+
+                    // Validar URLs
+                    const invalidUrls = editImageUrls.filter(url => !/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url));
+                    if (invalidUrls.length > 0) {
+                        showToast(`URLs inválidas o no son imágenes: ${invalidUrls.join(', ')}`, 'warning');
+                        return;
+                    }
+
+                    thumbnails = editImageUrls;
+                }
+
+                if (isUsingFile) {
+                    const editImageFiles = li.querySelector('.edit-image-files').files;
+                    const imagePromises = Array.from(editImageFiles).map(file => {
+                        return new Promise((resolve, reject) => {
+                            if (!file.type.startsWith('image/')) {
+                                reject(`Archivo no válido: ${file.name}`);
+                            }
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = () => reject(`Error al leer el archivo: ${file.name}`);
+                            reader.readAsDataURL(file);
+                        });
+                    });
+
+                    Promise.all(imagePromises)
+                        .then(images => {
+                            thumbnails = images;
+                            proceedWithModification();
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            showToast('Error al procesar las imágenes.', 'danger');
+                        });
+
+                    return; // Salir para esperar la promesa
+                }
+
+                // Proceder con la modificación si no se usan archivos
+                if (!isUsingFile) {
+                    proceedWithModification();
+                }
+
+                function proceedWithModification() {
+                    const updatedProduct = {
+                        id: productId,
+                        title: editTitle,
+                        description: editDescription,
+                        code: editCode,
+                        price: editPrice,
+                        stock: editStock,
+                        category: editCategory,
+                        thumbnails: thumbnails.length > 0 ? thumbnails : [] // Si se agregan nuevas imágenes
+                    };
+
+                    updatedData = updatedProduct;
+
+                    // Almacenar los datos en el elemento para accederlos al confirmar
+                    li.dataset.updatedData = JSON.stringify(updatedData);
+                }
             }
         });
 
@@ -284,19 +573,9 @@
             }
 
             if (currentAction === 'modify') {
-                const li = document.querySelector(`li[data-id="${currentProductId}"]`);
-                const updatedData = JSON.parse(li.dataset.updatedData);
-
-                // Validar que los campos no estén vacíos después de recortar
-                if (
-                    !updatedData.title ||
-                    !updatedData.description ||
-                    !updatedData.code ||
-                    isNaN(updatedData.price) ||
-                    isNaN(updatedData.stock) ||
-                    !updatedData.category
-                ) {
-                    showToast('Por favor, completa todos los campos correctamente.', 'warning');
+                if (!updatedData) {
+                    showToast('Datos de producto no disponibles.', 'danger');
+                    confirmationModal.hide();
                     return;
                 }
 
@@ -304,22 +583,81 @@
                 socket.emit('modifyProduct', updatedData);
                 showToast('Producto modificado exitosamente', 'success');
 
-                // Actualizar los datos en el DOM
-                renderProducts([...JSON.parse(document.getElementById('products-list').dataset.products || '[]')]);
+                // Limpiar los datos almacenados
+                updatedData = null;
             }
 
             // Ocultar el modal después de la acción
             confirmationModal.hide();
         });
 
-        // Inicializar la lista de productos al conectar
-        socket.on('connect', () => {
-            console.log('Conectado al servidor');
-        });
-
         // Manejar desconexión
         socket.on('disconnect', () => {
             console.log('Desconectado del servidor');
+        });
+    });
+</script>
+
+<!-- Scripts adicionales para manejar previsualización de imágenes en formularios de edición -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Función para previsualizar imágenes seleccionadas en el formulario de edición
+        const productsList = document.getElementById('products-list');
+
+        productsList.addEventListener('change', (e) => {
+            if (e.target && e.target.matches('.edit-image-urls')) {
+                const input = e.target;
+                const previewContainer = input.parentElement.querySelector('.edit-url-image-preview');
+                previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+                const urls = input.value.split(',').map(url => url.trim()).filter(url => url !== '');
+                if (urls.length === 0) return;
+
+                urls.forEach(url => {
+                    // Validar que la URL sea válida y apunte a una imagen
+                    if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url)) {
+                        showToast(`URL inválida o no es una imagen: ${url}`, 'warning');
+                        return;
+                    }
+
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.className = 'img-thumbnail';
+                    img.style.width = '100px';
+                    img.style.height = '100px';
+                    img.style.objectFit = 'cover';
+                    img.onerror = () => {
+                        img.src = 'https://via.placeholder.com/100x100.png?text=No+Image';
+                    };
+                    previewContainer.appendChild(img);
+                });
+            }
+
+            if (e.target && e.target.matches('.edit-image-files')) {
+                const input = e.target;
+                const previewContainer = input.parentElement.querySelector('.edit-file-image-preview');
+                previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+                const files = input.files;
+                if (files) {
+                    Array.from(files).forEach(file => {
+                        if (!file.type.startsWith('image/')) {
+                            showToast(`Archivo no válido: ${file.name}`, 'warning');
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            img.className = 'img-thumbnail';
+                            img.style.width = '100px';
+                            img.style.height = '100px';
+                            img.style.objectFit = 'cover';
+                            previewContainer.appendChild(img);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
         });
     });
 </script>
