@@ -86,6 +86,11 @@ class ProductsController {
         throw new Error("Producto no encontrado.");
       }
 
+       // Si 'thumbnails' es un arreglo vacío, se elimina de los datos actualizados para no sobreescribir
+    if ("thumbnails" in sanitizedData && sanitizedData.thumbnails.length === 0) {
+      delete sanitizedData.thumbnails;
+    }
+
       // Evitar actualizar el ID
       const { id, ...rest } = sanitizedData;
       products[index] = { ...products[index], ...rest };

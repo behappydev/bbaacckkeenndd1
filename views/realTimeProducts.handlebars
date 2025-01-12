@@ -60,13 +60,11 @@
 <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header" :class="{'bg-danger': actionType === 'delete', 'bg-info': actionType === 'modify'}">
-        <h5 class="modal-title" id="confirmationModalLabel">{{ modalTitle }}</h5>
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmationModalLabel"></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body">
-        {{ modalMessage }}
-      </div>
+      <div class="modal-body" id="confirmation-modal-message"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="confirm-action-btn">Confirmar</button>
@@ -77,179 +75,452 @@
 
 <!-- Contenedor de Toasts -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-  <div id="toast-container">
-    <!-- Los toasts se agregarán aquí dinámicamente -->
-  </div>
+  <div id="toast-container"></div>
 </div>
 
-<!-- Scripts específicos para esta vista -->
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+document.addEventListener('DOMContentLoaded', () => {
+  const socket = io();
 
-    // Variables para manejar acciones en el modal
-    let currentAction = null; // 'modify' o 'delete'
-    let currentProductId = null;
-    let updatedData = null; // Datos actualizados para modificar
+  // Variables para manejar acciones en el modal
+  let currentAction = null; // 'modify' o 'delete'
+  let currentProductId = null;
+  let updatedData = null; // Datos actualizados para modificar
 
-    // Referencias al modal
-    const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'), {
-      keyboard: false
+  // Referencias al modal
+  const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'), { keyboard: false });
+  const modalTitle = document.getElementById('confirmationModalLabel');
+  const modalMessage = document.getElementById('confirmation-modal-message');
+  const confirmActionBtn = document.getElementById('confirm-action-btn');
+
+  /* ===== Funciones Generales ===== */
+  const showToast = (message, type = 'success') => {
+    const toastContainer = document.getElementById('toast-container');
+    const toastId = `toast-${Date.now()}`;
+    const toastHTML = `
+      <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+      </div>`;
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    toastElement.addEventListener('hidden.bs.toast', () => { toastElement.remove(); });
+  };
+
+  const sanitizeHTML = (str) => {
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+  };
+
+  const renderImages = (thumbnails) => {
+    if (!thumbnails || thumbnails.length === 0) {
+      return `<p>No hay imágenes disponibles.</p>`;
+    }
+    let imagesHTML = '<div class="d-flex flex-wrap gap-2">';
+    thumbnails.forEach(img => {
+      imagesHTML += `<img src="${sanitizeHTML(img)}" alt="Imagen del producto" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">`;
     });
-    const modalTitle = document.getElementById('confirmationModalLabel');
-    const modalMessage = document.querySelector('#confirmationModal .modal-body');
-    const confirmActionBtn = document.getElementById('confirm-action-btn');
+    imagesHTML += '</div>';
+    return imagesHTML;
+  };
 
-    // Funciones para mostrar toasts
-    const showToast = (message, type = 'success') => {
-      const toastContainer = document.getElementById('toast-container');
-      const toastId = `toast-${Date.now()}`;
-      const toastHTML = `
-        <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
-          <div class="d-flex">
-            <div class="toast-body">
-              ${message}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+  const previewImagesFromURLs = (input, previewContainer) => {
+    previewContainer.innerHTML = '';
+    const urls = input.value.split(',').map(url => url.trim()).filter(url => url !== '');
+    if (urls.length === 0) return;
+    urls.forEach(url => {
+      if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url)) {
+        showToast(`URL inválida o no es una imagen: ${url}`, 'warning');
+        return;
+      }
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'img-thumbnail';
+      img.style.width = '100px';
+      img.style.height = '100px';
+      img.style.objectFit = 'cover';
+      img.onerror = () => { img.src = 'https://via.placeholder.com/100x100.png?text=No+Image'; };
+      previewContainer.appendChild(img);
+    });
+  };
+
+  const previewImagesFromFiles = (input, previewContainer) => {
+    previewContainer.innerHTML = '';
+    const files = input.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        if (!file.type.startsWith('image/')) {
+          showToast(`Archivo no válido: ${file.name}`, 'warning');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'img-thumbnail';
+          img.style.width = '100px';
+          img.style.height = '100px';
+          img.style.objectFit = 'cover';
+          previewContainer.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  /* ===== Toggle de Imágenes en Agregar Producto ===== */
+  const toggleUrlInputBtn = document.getElementById('toggle-url-input');
+  const toggleFileInputBtn = document.getElementById('toggle-file-input');
+  const urlInputContainer = document.getElementById('url-input-container');
+  const fileInputContainer = document.getElementById('file-input-container');
+
+  toggleUrlInputBtn.addEventListener('click', () => {
+    urlInputContainer.style.display = 'block';
+    fileInputContainer.style.display = 'none';
+  });
+
+  toggleFileInputBtn.addEventListener('click', () => {
+    fileInputContainer.style.display = 'block';
+    urlInputContainer.style.display = 'none';
+  });
+
+  /* ===== Agregar Producto Nuevo ===== */
+  const addProductForm = document.getElementById('add-product-form');
+  const urlImageInput = document.getElementById('image-urls');
+  const urlImagePreview = document.getElementById('url-image-preview');
+  const fileImageInput = document.getElementById('image-files');
+  const fileImagePreview = document.getElementById('file-image-preview');
+
+  urlImageInput.addEventListener('input', () => {
+    previewImagesFromURLs(urlImageInput, urlImagePreview);
+  });
+  fileImageInput.addEventListener('change', () => {
+    previewImagesFromFiles(fileImageInput, fileImagePreview);
+  });
+
+  addProductForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const code = document.getElementById('code').value.trim();
+    const price = parseFloat(document.getElementById('price').value);
+    const stock = parseInt(document.getElementById('stock').value);
+    const category = document.getElementById('category').value.trim();
+    const urlImagesRaw = urlImageInput.value.trim();
+    const urlImages = urlImagesRaw.split(',').map(url => url.trim()).filter(url => url !== '');
+    const fileImages = fileImageInput.files;
+
+    if (!title || !description || !code || isNaN(price) || isNaN(stock) || !category) {
+      showToast('Por favor, completa todos los campos obligatorios.', 'warning');
+      return;
+    }
+
+    const isUsingURL = urlImages.length > 0 && urlInputContainer.style.display === 'block';
+    const isUsingFile = fileImages.length > 0 && fileInputContainer.style.display === 'block';
+
+    if (!isUsingURL && !isUsingFile) {
+      showToast('Por favor, elige un método para agregar imágenes: URL o Archivo.', 'warning');
+      return;
+    }
+
+    if (isUsingURL) {
+      const invalidUrls = urlImages.filter(url => !/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url));
+      if (invalidUrls.length > 0) {
+        showToast(`Las siguientes URLs no son válidas o no son imágenes: ${invalidUrls.join(', ')}`, 'warning');
+        return;
+      }
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('code', code);
+      formData.append('price', price);
+      formData.append('stock', stock);
+      formData.append('category', category);
+      urlImages.forEach(url => formData.append('thumbnails', url));
+      const productObj = Object.fromEntries(formData);
+      productObj.thumbnails = formData.getAll('thumbnails');
+      socket.emit('newProduct', productObj);
+      showToast('Producto agregado exitosamente', 'success');
+      addProductForm.reset();
+      urlImagePreview.innerHTML = '';
+      fileImagePreview.innerHTML = '';
+    }
+
+    if (isUsingFile) {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('code', code);
+      formData.append('price', price);
+      formData.append('stock', stock);
+      formData.append('category', category);
+      Array.from(fileImages).forEach(file => formData.append('thumbnails', file));
+      fetch('/api/products/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        const newProduct = {
+          title,
+          description,
+          code,
+          price,
+          stock,
+          category,
+          thumbnails: data.thumbnails
+        };
+        socket.emit('newProduct', newProduct);
+        showToast('Producto agregado exitosamente', 'success');
+        addProductForm.reset();
+        urlImagePreview.innerHTML = '';
+        fileImagePreview.innerHTML = '';
+      })
+      .catch(error => {
+        console.error(error);
+        showToast('Error al subir las imágenes.', 'danger');
+      });
+    }
+  });
+
+  /* ===== Renderizar Productos ===== */
+  const renderProducts = (products) => {
+    const productsList = document.getElementById('products-list');
+    productsList.innerHTML = '';
+    products.forEach(product => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item';
+      li.setAttribute('data-id', product.id);
+      li.dataset.originalThumbnails = JSON.stringify(product.thumbnails);
+      li.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h5 class="fw-bold">${sanitizeHTML(product.title)}</h5>
+            <p>${sanitizeHTML(product.description)}</p>
+            <p><strong>Precio:</strong> $${parseFloat(product.price).toFixed(2)}</p>
+            <p><strong>Categoría:</strong> ${sanitizeHTML(product.category)}</p>
+            <p><strong>Stock:</strong> ${parseInt(product.stock)}</p>
+            <p><strong>Código:</strong> ${sanitizeHTML(product.code)}</p>
+            <p><strong>Estado:</strong> ${product.status ? 'Activo' : 'Inactivo'}</p>
+            ${renderImages(product.thumbnails)}
+          </div>
+          <div>
+            <button class="btn btn-warning btn-sm modify-btn me-2">Modificar</button>
+            <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
           </div>
         </div>
-      `;
-      toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-      const toastElement = document.getElementById(toastId);
-      const toast = new bootstrap.Toast(toastElement);
-      toast.show();
-
-      // Eliminar el toast del DOM después de ocultarse
-      toastElement.addEventListener('hidden.bs.toast', () => {
-        toastElement.remove();
-      });
-    };
-
-    // Función para renderizar la lista de productos
-    const renderProducts = (products) => {
-      const productsList = document.getElementById('products-list');
-      productsList.innerHTML = ''; // Limpiar la lista actual
-
-      products.forEach(product => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.setAttribute('data-id', product.id);
-        li.innerHTML = `
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <h5 class="fw-bold">${sanitizeHTML(product.title)}</h5>
-              <p>${sanitizeHTML(product.description)}</p>
-              <p><strong>Precio:</strong> $${parseFloat(product.price).toFixed(2)}</p>
-              <p><strong>Categoría:</strong> ${sanitizeHTML(product.category)}</p>
-              <p><strong>Stock:</strong> ${parseInt(product.stock)}</p>
-              <p><strong>Código:</strong> ${sanitizeHTML(product.code)}</p>
-              <p><strong>Estado:</strong> ${product.status ? 'Activo' : 'Inactivo'}</p>
-              ${renderImages(product.thumbnails)}
+        <!-- Formulario de edición -->
+        <form class="edit-form mt-3 p-3 border rounded" style="display: none;" enctype="multipart/form-data">
+          <div class="mb-3">
+            <input type="text" class="form-control edit-title" placeholder="Título" value="${sanitizeHTML(product.title)}" required>
+          </div>
+          <div class="mb-3">
+            <input type="text" class="form-control edit-description" placeholder="Descripción" value="${sanitizeHTML(product.description)}" required>
+          </div>
+          <div class="mb-3">
+            <input type="text" class="form-control edit-code" placeholder="Código" value="${sanitizeHTML(product.code)}" required>
+          </div>
+          <div class="mb-3">
+            <input type="number" class="form-control edit-price" placeholder="Precio" step="0.01" value="${parseFloat(product.price).toFixed(2)}" required>
+          </div>
+          <div class="mb-3">
+            <input type="number" class="form-control edit-stock" placeholder="Stock" value="${parseInt(product.stock)}" required>
+          </div>
+          <div class="mb-3">
+            <input type="text" class="form-control edit-category" placeholder="Categoría" value="${sanitizeHTML(product.category)}" required>
+          </div>
+          <!-- Sección para agregar imágenes en edición -->
+          <div class="mb-3">
+            <label class="form-label">Agregar Imágenes</label>
+            <div class="d-flex mb-2">
+              <button type="button" class="btn btn-outline-secondary me-2 toggle-edit-url-input">Agregar por URL</button>
+              <button type="button" class="btn btn-outline-secondary toggle-edit-file-input">Agregar por Archivo</button>
             </div>
-            <div>
-              <button class="btn btn-warning btn-sm modify-btn me-2">Modificar</button>
-              <button class="btn btn-danger btn-sm delete-btn">Eliminar</button>
+            <div class="edit-url-input-container mb-3" style="display: none;">
+              <input type="text" class="form-control edit-image-urls" placeholder="Ingresa URLs separadas por comas">
+              <div class="mt-2 edit-url-image-preview d-flex flex-wrap"></div>
+            </div>
+            <div class="edit-file-input-container mb-3" style="display: none;">
+              <input type="file" class="form-control edit-image-files" accept="image/*" multiple>
+              <div class="mt-2 edit-file-image-preview d-flex flex-wrap"></div>
             </div>
           </div>
+          <button type="submit" class="btn btn-primary btn-sm me-2">Guardar</button>
+          <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancelar</button>
+        </form>
+      `;
+      productsList.appendChild(li);
+    });
+  };
 
-          <!-- Formulario de edición -->
-          <form class="edit-form mt-3 p-3 border rounded" style="display: none;" enctype="multipart/form-data">
-            <div class="mb-3">
-              <input type="text" class="form-control edit-title" placeholder="Título" value="${sanitizeHTML(product.title)}" required>
-            </div>
-            <div class="mb-3">
-              <input type="text" class="form-control edit-description" placeholder="Descripción" value="${sanitizeHTML(product.description)}" required>
-            </div>
-            <div class="mb-3">
-              <input type="text" class="form-control edit-code" placeholder="Código" value="${sanitizeHTML(product.code)}" required>
-            </div>
-            <div class="mb-3">
-              <input type="number" class="form-control edit-price" placeholder="Precio" step="0.01" value="${parseFloat(product.price).toFixed(2)}" required>
-            </div>
-            <div class="mb-3">
-              <input type="number" class="form-control edit-stock" placeholder="Stock" value="${parseInt(product.stock)}" required>
-            </div>
-            <div class="mb-3">
-              <input type="text" class="form-control edit-category" placeholder="Categoría" value="${sanitizeHTML(product.category)}" required>
-            </div>
-            <!-- Sección para agregar imágenes -->
-            <div class="mb-3">
-              <label class="form-label">Agregar Imágenes</label>
-              <!-- Opciones para agregar imágenes: URL o Archivo -->
-              <div class="d-flex mb-2">
-                <button type="button" class="btn btn-outline-secondary me-2 toggle-edit-url-input">Agregar por URL</button>
-                <button type="button" class="btn btn-outline-secondary toggle-edit-file-input">Agregar por Archivo</button>
-              </div>
-              <!-- Contenedor para agregar imágenes por URL -->
-              <div class="edit-url-input-container mb-3" style="display: none;">
-                <input type="text" class="form-control edit-image-urls" placeholder="Ingresa URLs separadas por comas">
-                <div class="mt-2 edit-url-image-preview d-flex flex-wrap"></div>
-              </div>
-              <!-- Contenedor para agregar imágenes por Archivo -->
-              <div class="edit-file-input-container mb-3" style="display: none;">
-                <input type="file" class="form-control edit-image-files" accept="image/*" multiple>
-                <div class="mt-2 edit-file-image-preview d-flex flex-wrap"></div>
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm me-2">Guardar</button>
-            <button type="button" class="btn btn-secondary btn-sm cancel-btn">Cancelar</button>
-          </form>
-        `;
-        productsList.appendChild(li);
-      });
-    };
+  /* ===== Modificar / Eliminar Producto ===== */
+  const productsList = document.getElementById('products-list');
+  productsList.addEventListener('click', (e) => {
+    if (e.target && e.target.matches('button.delete-btn')) {
+      const li = e.target.closest('li');
+      const productId = li.getAttribute('data-id');
+      const productTitle = li.querySelector('.fw-bold').textContent;
+      currentAction = 'delete';
+      currentProductId = productId;
+      modalTitle.textContent = 'Confirmar Eliminación';
+      modalMessage.textContent = `¿Estás seguro de que deseas eliminar el producto "${productTitle}"?`;
+      confirmActionBtn.className = 'btn btn-danger';
+      confirmActionBtn.textContent = 'Eliminar';
+      confirmationModal.show();
+    }
+    if (e.target && e.target.matches('button.modify-btn')) {
+      const li = e.target.closest('li');
+      li.querySelector('.edit-form').style.display = 'block';
+    }
+  });
 
-    // Función para sanitizar HTML y prevenir XSS
-    const sanitizeHTML = (str) => {
-      const temp = document.createElement('div');
-      temp.textContent = str;
-      return temp.innerHTML;
-    };
+  productsList.addEventListener('submit', (e) => {
+    if (e.target && e.target.matches('.edit-form')) {
+      e.preventDefault();
+      const li = e.target.closest('li');
+      const productId = li.getAttribute('data-id');
+      const productTitle = li.querySelector('.fw-bold').textContent;
+      currentAction = 'modify';
+      currentProductId = productId;
+      modalTitle.textContent = 'Confirmar Modificación';
+      modalMessage.textContent = `¿Estás seguro de que deseas modificar el producto "${productTitle}"?`;
+      confirmActionBtn.className = 'btn btn-primary';
+      confirmActionBtn.textContent = 'Modificar';
+      confirmationModal.show();
 
-    // Función para renderizar imágenes del producto
-    const renderImages = (thumbnails) => {
-      if (!thumbnails || thumbnails.length === 0) {
-        return `<p>No hay imágenes disponibles.</p>`;
+      const editTitle = li.querySelector('.edit-title').value.trim();
+      const editDescription = li.querySelector('.edit-description').value.trim();
+      const editCode = li.querySelector('.edit-code').value.trim();
+      const editPrice = parseFloat(li.querySelector('.edit-price').value);
+      const editStock = parseInt(li.querySelector('.edit-stock').value);
+      const editCategory = li.querySelector('.edit-category').value.trim();
+      const editUrlInputContainer = li.querySelector('.edit-url-input-container');
+      const editFileInputContainer = li.querySelector('.edit-file-input-container');
+      const isUsingURL = editUrlInputContainer.style.display === 'block';
+      const isUsingFile = editFileInputContainer.style.display === 'block';
+      let thumbnails = [];
+
+      if (isUsingURL) {
+        const editImageUrlsRaw = li.querySelector('.edit-image-urls').value.trim();
+        const editImageUrls = editImageUrlsRaw.split(',').map(url => url.trim()).filter(url => url !== '');
+        const invalidUrls = editImageUrls.filter(url => !/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url));
+        if (invalidUrls.length > 0) {
+          showToast(`URLs inválidas o no son imágenes: ${invalidUrls.join(', ')}`, 'warning');
+          return;
+        }
+        thumbnails = editImageUrls;
+        proceedWithModification();
+      } else if (isUsingFile) {
+        const editImageFiles = li.querySelector('.edit-image-files').files;
+        const formDataFiles = new FormData();
+        Array.from(editImageFiles).forEach(file => formDataFiles.append('thumbnails', file));
+        fetch('/api/products/upload', {
+          method: 'POST',
+          body: formDataFiles
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          thumbnails = data.thumbnails;
+          proceedWithModification();
+        })
+        .catch(error => {
+          console.error(error);
+          showToast('Error al subir las imágenes durante la modificación.', 'danger');
+        });
+        return;
+      } else {
+        // Si no se modifican imágenes, usar las originales.
+        proceedWithModification();
       }
-      let imagesHTML = '<div class="d-flex flex-wrap gap-2">';
-      thumbnails.forEach(img => {
-        imagesHTML += `
-          <img src="${sanitizeHTML(img)}" alt="Imagen del producto" class="img-thumbnail" style="width: 100px; height: 100px; object-fit: cover;">
-        `;
-      });
-      imagesHTML += '</div>';
-      return imagesHTML;
-    };
 
-    // Función para previsualizar imágenes desde URLs
-    const previewImagesFromURLs = (input, previewContainer) => {
-      previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+      function proceedWithModification() {
+        if (thumbnails.length === 0) {
+          const originalThumbnails = JSON.parse(li.dataset.originalThumbnails || '[]');
+          thumbnails = originalThumbnails;
+        }
+        const updatedProduct = {
+          id: productId,
+          title: editTitle,
+          description: editDescription,
+          code: editCode,
+          price: editPrice,
+          stock: editStock,
+          category: editCategory,
+          thumbnails: thumbnails
+        };
+        updatedData = updatedProduct;
+        li.dataset.updatedData = JSON.stringify(updatedData);
+      }
+    }
+  });
+
+  confirmActionBtn.addEventListener('click', () => {
+    if (currentAction === 'delete') {
+      socket.emit('deleteProduct', currentProductId);
+      showToast('Producto eliminado exitosamente', 'success');
+    }
+    if (currentAction === 'modify') {
+      if (!updatedData) {
+        showToast('Datos de producto no disponibles.', 'danger');
+        confirmationModal.hide();
+        return;
+      }
+      socket.emit('modifyProduct', updatedData);
+      showToast('Producto modificado exitosamente', 'success');
+      updatedData = null;
+    }
+    confirmationModal.hide();
+  });
+
+  /* ===== Toggle y Previsualización en Edición ===== */
+  document.getElementById('products-list').addEventListener('click', (e) => {
+    if (e.target && e.target.matches('.toggle-edit-url-input')) {
+      const editForm = e.target.closest('.edit-form');
+      editForm.querySelector('.edit-url-input-container').style.display = 'block';
+      editForm.querySelector('.edit-file-input-container').style.display = 'none';
+    }
+    if (e.target && e.target.matches('.toggle-edit-file-input')) {
+      const editForm = e.target.closest('.edit-form');
+      editForm.querySelector('.edit-file-input-container').style.display = 'block';
+      editForm.querySelector('.edit-url-input-container').style.display = 'none';
+    }
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target && e.target.matches('.edit-image-urls')) {
+      const input = e.target;
+      const previewContainer = input.parentElement.querySelector('.edit-url-image-preview');
+      previewContainer.innerHTML = '';
       const urls = input.value.split(',').map(url => url.trim()).filter(url => url !== '');
       if (urls.length === 0) return;
-
       urls.forEach(url => {
-        // Validar que la URL sea válida y apunte a una imagen
         if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url)) {
           showToast(`URL inválida o no es una imagen: ${url}`, 'warning');
           return;
         }
-
         const img = document.createElement('img');
         img.src = url;
         img.className = 'img-thumbnail';
         img.style.width = '100px';
         img.style.height = '100px';
         img.style.objectFit = 'cover';
-        img.onerror = () => {
-          img.src = 'https://via.placeholder.com/100x100.png?text=No+Image';
-        };
+        img.onerror = () => { img.src = 'https://via.placeholder.com/100x100.png?text=No+Image'; };
         previewContainer.appendChild(img);
       });
-    };
-
-    // Función para previsualizar imágenes desde archivos (solo para mostrar en el form)
-    const previewImagesFromFiles = (input, previewContainer) => {
-      previewContainer.innerHTML = ''; // Limpiar previsualizaciones anteriores
+    }
+    if (e.target && e.target.matches('.edit-image-files')) {
+      const input = e.target;
+      const previewContainer = input.parentElement.querySelector('.edit-file-image-preview');
+      previewContainer.innerHTML = '';
       const files = input.files;
       if (files) {
         Array.from(files).forEach(file => {
@@ -257,11 +528,10 @@
             showToast(`Archivo no válido: ${file.name}`, 'warning');
             return;
           }
-
           const reader = new FileReader();
-          reader.onload = (e) => {
+          reader.onload = (event) => {
             const img = document.createElement('img');
-            img.src = e.target.result;
+            img.src = event.target.result;
             img.className = 'img-thumbnail';
             img.style.width = '100px';
             img.style.height = '100px';
@@ -271,376 +541,16 @@
           reader.readAsDataURL(file);
         });
       }
-    };
-
-    // Toggle para mostrar/ocultar la sección de URL de imágenes en el formulario de agregar
-    const toggleUrlInputBtn = document.getElementById('toggle-url-input');
-    const toggleFileInputBtn = document.getElementById('toggle-file-input');
-    const urlInputContainer = document.getElementById('url-input-container');
-    const fileInputContainer = document.getElementById('file-input-container');
-
-    toggleUrlInputBtn.addEventListener('click', () => {
-      urlInputContainer.style.display = 'block';
-      fileInputContainer.style.display = 'none';
-    });
-
-    toggleFileInputBtn.addEventListener('click', () => {
-      fileInputContainer.style.display = 'block';
-      urlInputContainer.style.display = 'none';
-    });
-
-    // Toggle para mostrar/ocultar la sección de URL de imágenes en el formulario de edición
-    document.getElementById('products-list').addEventListener('click', (e) => {
-      if (e.target && e.target.matches('.toggle-edit-url-input')) {
-        const editForm = e.target.closest('.edit-form');
-        const urlContainer = editForm.querySelector('.edit-url-input-container');
-        const fileContainer = editForm.querySelector('.edit-file-input-container');
-        urlContainer.style.display = 'block';
-        fileContainer.style.display = 'none';
-      }
-
-      if (e.target && e.target.matches('.toggle-edit-file-input')) {
-        const editForm = e.target.closest('.edit-form');
-        const urlContainer = editForm.querySelector('.edit-url-input-container');
-        const fileContainer = editForm.querySelector('.edit-file-input-container');
-        fileContainer.style.display = 'block';
-        urlContainer.style.display = 'none';
-      }
-    });
-
-    // Escuchar actualizaciones de productos
-    socket.on('updateProducts', (products) => {
-      renderProducts(products);
-      showToast('Lista de productos actualizada', 'info');
-    });
-
-    // Escuchar mensajes de éxito
-    socket.on('successMessage', (msg) => {
-      showToast(msg, 'success');
-    });
-
-    // Escuchar mensajes de error
-    socket.on('errorMessage', (msg) => {
-      showToast(msg, 'danger');
-    });
-
-    // Manejar el formulario de agregar producto
-    const addProductForm = document.getElementById('add-product-form');
-    const urlImageInput = document.getElementById('image-urls');
-    const urlImagePreview = document.getElementById('url-image-preview');
-    const fileImageInput = document.getElementById('image-files');
-    const fileImagePreview = document.getElementById('file-image-preview');
-
-    // Previsualizar imágenes al ingresar URLs
-    urlImageInput.addEventListener('input', () => {
-      previewImagesFromURLs(urlImageInput, urlImagePreview);
-    });
-
-    // Previsualizar imágenes al seleccionar archivos
-    fileImageInput.addEventListener('change', () => {
-      previewImagesFromFiles(fileImageInput, fileImagePreview);
-    });
-
-    addProductForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const title = document.getElementById('title').value.trim();
-      const description = document.getElementById('description').value.trim();
-      const code = document.getElementById('code').value.trim();
-      const price = parseFloat(document.getElementById('price').value);
-      const stock = parseInt(document.getElementById('stock').value);
-      const category = document.getElementById('category').value.trim();
-      const urlImagesRaw = urlImageInput.value.trim();
-      const urlImages = urlImagesRaw.split(',').map(url => url.trim()).filter(url => url !== '');
-      const fileImages = fileImageInput.files;
-
-      // Validar que los campos obligatorios no estén vacíos
-      if (!title || !description || !code || isNaN(price) || isNaN(stock) || !category) {
-        showToast('Por favor, completa todos los campos obligatorios.', 'warning');
-        return;
-      }
-
-      // Determinar qué método de adición de imágenes se está utilizando
-      const isUsingURL = urlImages.length > 0 && urlInputContainer.style.display === 'block';
-      const isUsingFile = fileImages.length > 0 && fileInputContainer.style.display === 'block';
-
-      if (!isUsingURL && !isUsingFile) {
-        showToast('Por favor, elige un método para agregar imágenes: URL o Archivo.', 'warning');
-        return;
-      }
-
-      // Crear un objeto FormData para enviar datos
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      formData.append('code', code);
-      formData.append('price', price);
-      formData.append('stock', stock);
-      formData.append('category', category);
-
-      if (isUsingURL) {
-        // Validar URLs
-        const invalidUrls = urlImages.filter(url => !/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url));
-        if (invalidUrls.length > 0) {
-          showToast(`Las siguientes URLs no son válidas o no son imágenes: ${invalidUrls.join(', ')}`, 'warning');
-          return;
-        }
-
-        // Agregar las URLs al FormData (con clave "thumbnails")
-        urlImages.forEach((url) => {
-          formData.append("thumbnails", url);
-        });
-
-        // Convertir a objeto y forzar que 'thumbnails' sea un arreglo
-        const productObj = Object.fromEntries(formData);
-        productObj.thumbnails = formData.getAll("thumbnails");
-        socket.emit('newProduct', productObj);
-        showToast('Producto agregado exitosamente', 'success');
-        addProductForm.reset();
-        urlImagePreview.innerHTML = '';
-        fileImagePreview.innerHTML = '';
-      }
-
-      if (isUsingFile) {
-        // Agregar solo los archivos al FormData
-        Array.from(fileImages).forEach(file => {
-          formData.append('thumbnails', file);
-        });
-
-        // Enviar los archivos al endpoint de carga para obtener las URLs públicas
-        fetch('/api/products/upload', {
-          method: 'POST',
-          body: formData
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.error) {
-              throw new Error(data.error);
-            }
-            const newProduct = {
-              title,
-              description,
-              code,
-              price,
-              stock,
-              category,
-              thumbnails: data.thumbnails // Se usan las URLs retornadas
-            };
-            socket.emit('newProduct', newProduct);
-            showToast('Producto agregado exitosamente', 'success');
-            addProductForm.reset();
-            urlImagePreview.innerHTML = '';
-            fileImagePreview.innerHTML = '';
-          })
-          .catch(error => {
-            console.error(error);
-            showToast('Error al subir las imágenes.', 'danger');
-          });
-      }
-    });
-
-    // Delegación de eventos para "Eliminar" y "Modificar"
-    const productsList = document.getElementById('products-list');
-    productsList.addEventListener('click', (e) => {
-      if (e.target && e.target.matches('button.delete-btn')) {
-        const li = e.target.closest('li');
-        const productId = li.getAttribute('data-id');
-        const productTitle = li.querySelector('.fw-bold').textContent;
-
-        // Configurar el modal para eliminar
-        currentAction = 'delete';
-        currentProductId = productId;
-        modalTitle.textContent = 'Confirmar Eliminación';
-        modalMessage.textContent = `¿Estás seguro de que deseas eliminar el producto "${productTitle}"?`;
-        confirmActionBtn.className = 'btn btn-danger';
-        confirmActionBtn.textContent = 'Eliminar';
-
-        // Mostrar el modal
-        confirmationModal.show();
-      }
-
-      if (e.target && e.target.matches('button.modify-btn')) {
-        const li = e.target.closest('li');
-        const editForm = li.querySelector('.edit-form');
-        editForm.style.display = 'block';
-      }
-    });
-
-    // Manejar el envío del formulario de edición
-    productsList.addEventListener('submit', (e) => {
-      if (e.target && e.target.matches('.edit-form')) {
-        e.preventDefault();
-        const li = e.target.closest('li');
-        const productId = li.getAttribute('data-id');
-        const productTitle = li.querySelector('.fw-bold').textContent;
-
-        // Configurar el modal para modificar
-        currentAction = 'modify';
-        currentProductId = productId;
-        modalTitle.textContent = 'Confirmar Modificación';
-        modalMessage.textContent = `¿Estás seguro de que deseas modificar el producto "${productTitle}"?`;
-        confirmActionBtn.className = 'btn btn-primary';
-        confirmActionBtn.textContent = 'Modificar';
-
-        // Mostrar el modal
-        confirmationModal.show();
-
-        // Recopilar los datos actualizados
-        const editTitle = li.querySelector('.edit-title').value.trim();
-        const editDescription = li.querySelector('.edit-description').value.trim();
-        const editCode = li.querySelector('.edit-code').value.trim();
-        const editPrice = parseFloat(li.querySelector('.edit-price').value);
-        const editStock = parseInt(li.querySelector('.edit-stock').value);
-        const editCategory = li.querySelector('.edit-category').value.trim();
-
-        // Determinar qué método de adición de imágenes se está utilizando en edición
-        const editUrlInputContainer = li.querySelector('.edit-url-input-container');
-        const editFileInputContainer = li.querySelector('.edit-file-input-container');
-        const isUsingURL = editUrlInputContainer.style.display === 'block';
-        const isUsingFile = editFileInputContainer.style.display === 'block';
-
-        let thumbnails = [];
-
-        if (isUsingURL) {
-          const editImageUrlsRaw = li.querySelector('.edit-image-urls').value.trim();
-          const editImageUrls = editImageUrlsRaw.split(',').map(url => url.trim()).filter(url => url !== '');
-          // Validar URLs
-          const invalidUrls = editImageUrls.filter(url => !/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url));
-          if (invalidUrls.length > 0) {
-            showToast(`URLs inválidas o no son imágenes: ${invalidUrls.join(', ')}`, 'warning');
-            return;
-          }
-          thumbnails = editImageUrls;
-          proceedWithModification();
-        }
-
-        if (isUsingFile) {
-          const editImageFiles = li.querySelector('.edit-image-files').files;
-          const formDataFiles = new FormData();
-          Array.from(editImageFiles).forEach(file => {
-            formDataFiles.append('thumbnails', file);
-          });
-          // Enviar los archivos a /api/products/upload
-          fetch('/api/products/upload', {
-            method: 'POST',
-            body: formDataFiles
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.error) {
-              throw new Error(data.error);
-            }
-            thumbnails = data.thumbnails;
-            proceedWithModification();
-          })
-          .catch(error => {
-            console.error(error);
-            showToast('Error al subir las imágenes durante la modificación.', 'danger');
-          });
-          return; // Esperar la respuesta del fetch
-        }
-
-        function proceedWithModification() {
-          const updatedProduct = {
-            id: productId,
-            title: editTitle,
-            description: editDescription,
-            code: editCode,
-            price: editPrice,
-            stock: editStock,
-            category: editCategory,
-            thumbnails: thumbnails.length > 0 ? thumbnails : []
-          };
-
-          updatedData = updatedProduct;
-          // Almacenar los datos en el elemento para accederlos al confirmar
-          li.dataset.updatedData = JSON.stringify(updatedData);
-        }
-      }
-    });
-
-    // Manejar la confirmación en el modal
-    confirmActionBtn.addEventListener('click', () => {
-      if (currentAction === 'delete') {
-        socket.emit('deleteProduct', currentProductId);
-        showToast('Producto eliminado exitosamente', 'success');
-      }
-
-      if (currentAction === 'modify') {
-        if (!updatedData) {
-          showToast('Datos de producto no disponibles.', 'danger');
-          confirmationModal.hide();
-          return;
-        }
-        socket.emit('modifyProduct', updatedData);
-        showToast('Producto modificado exitosamente', 'success');
-        updatedData = null;
-      }
-      confirmationModal.hide();
-    });
-
-    // Manejar desconexión
-    socket.on('disconnect', () => {
-      console.log('Desconectado del servidor');
-    });
+    }
   });
-</script>
 
-<!-- Scripts adicionales para manejar previsualización de imágenes en formularios de edición -->
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const productsList = document.getElementById('products-list');
-
-    productsList.addEventListener('change', (e) => {
-      if (e.target && e.target.matches('.edit-image-urls')) {
-        const input = e.target;
-        const previewContainer = input.parentElement.querySelector('.edit-url-image-preview');
-        previewContainer.innerHTML = '';
-        const urls = input.value.split(',').map(url => url.trim()).filter(url => url !== '');
-        if (urls.length === 0) return;
-
-        urls.forEach(url => {
-          if (!/^https?:\/\/.+\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(url)) {
-            showToast(`URL inválida o no es una imagen: ${url}`, 'warning');
-            return;
-          }
-          const img = document.createElement('img');
-          img.src = url;
-          img.className = 'img-thumbnail';
-          img.style.width = '100px';
-          img.style.height = '100px';
-          img.style.objectFit = 'cover';
-          img.onerror = () => {
-            img.src = 'https://via.placeholder.com/100x100.png?text=No+Image';
-          };
-          previewContainer.appendChild(img);
-        });
-      }
-
-      if (e.target && e.target.matches('.edit-image-files')) {
-        const input = e.target;
-        const previewContainer = input.parentElement.querySelector('.edit-file-image-preview');
-        previewContainer.innerHTML = '';
-        const files = input.files;
-        if (files) {
-          Array.from(files).forEach(file => {
-            if (!file.type.startsWith('image/')) {
-              showToast(`Archivo no válido: ${file.name}`, 'warning');
-              return;
-            }
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              const img = document.createElement('img');
-              img.src = event.target.result;
-              img.className = 'img-thumbnail';
-              img.style.width = '100px';
-              img.style.height = '100px';
-              img.style.objectFit = 'cover';
-              previewContainer.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-          });
-        }
-      }
-    });
+  /* ===== SOCKET EVENTS ===== */
+  socket.on('updateProducts', (products) => {
+    renderProducts(products);
+    showToast('Lista de productos actualizada', 'info');
   });
+  socket.on('successMessage', (msg) => { showToast(msg, 'success'); });
+  socket.on('errorMessage', (msg) => { showToast(msg, 'danger'); });
+  socket.on('disconnect', () => { console.log('Desconectado del servidor'); });
+});
 </script>

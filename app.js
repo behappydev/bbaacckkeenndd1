@@ -167,19 +167,14 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Evento para modificar producto
-  socket.on("modifyProduct", async (updatedProduct) => {
-    try {
-      // Validar que 'thumbnails' sea un arreglo de URLs válidas
-      if (
-        !Array.isArray(updatedProduct.thumbnails) ||
-        updatedProduct.thumbnails.length === 0
-      ) {
-        throw new Error(
-          "Debe proporcionar al menos una URL de imagen válida en 'thumbnails'."
-        );
-      }
-
+// Evento para modificar producto
+socket.on("modifyProduct", async (updatedProduct) => {
+  try {
+    // Si el arreglo de thumbnails está vacío, eliminarlo para conservar las imágenes previas
+    if (Array.isArray(updatedProduct.thumbnails) && updatedProduct.thumbnails.length === 0) {
+      delete updatedProduct.thumbnails;
+    } else {
+      // Si se envían nuevos thumbnails, validar que sean URLs válidas
       const invalidUrls = updatedProduct.thumbnails.filter(
         (url) => !isValidImageUrl(url)
       );
@@ -190,19 +185,21 @@ io.on("connection", (socket) => {
           )}`
         );
       }
-
-      await productsController.update(updatedProduct.id, updatedProduct);
-      const allProducts = await productsController.getAll();
-      io.emit("updateProducts", allProducts); // Emitir a todos los clientes
-      socket.emit("successMessage", "Producto modificado exitosamente.");
-    } catch (error) {
-      console.error("Error al modificar producto:", error.message);
-      socket.emit(
-        "errorMessage",
-        error.message || "Error al modificar el producto."
-      );
     }
-  });
+
+    await productsController.update(updatedProduct.id, updatedProduct);
+    const allProducts = await productsController.getAll();
+    io.emit("updateProducts", allProducts); // Emitir a todos los clientes
+    socket.emit("successMessage", "Producto modificado exitosamente.");
+  } catch (error) {
+    console.error("Error al modificar producto:", error.message);
+    socket.emit(
+      "errorMessage",
+      error.message || "Error al modificar el producto."
+    );
+  }
+});
+
 
   // Evento para eliminar producto
   socket.on("deleteProduct", async (productId) => {

@@ -40,19 +40,5 @@
     "thumbnails": [
       "https://img.freepik.com/fotos-premium/ingredientes-ensalada-primer-plano-lechuga-mantecosa-fresca_431161-23804.jpg"
     ]
-  },
-  {
-    "id": "4",
-    "title": "Testing",
-    "description": "Testinggg",
-    "code": "test21321",
-    "price": 2131,
-    "status": true,
-    "stock": 333,
-    "category": "dasdasd",
-    "thumbnails": [
-      "https://www.leonardostore.com.ar/wp-content/uploads/Diseno-sin-titulo-2023-09-16T123713.428-1.jpg",
-      "https://m.media-amazon.com/images/I/712ptG+UegL._AC_SL1500_.jpg"
-    ]
   }
 ]
