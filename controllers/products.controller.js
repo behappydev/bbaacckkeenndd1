@@ -50,18 +50,14 @@ class ProductsController {
   async create(productData) {
     try {
       // Validar y sanitizar los datos del producto
-      const sanitizedData = this.validateAndSanitizeProductData(
-        productData,
-        true
-      );
+      const sanitizedData = this.validateAndSanitizeProductData(productData, true);
 
       const products = await this.fileManager.readFile();
       const newId = this.generateId(products);
       const newProduct = {
         id: newId.toString(),
         ...sanitizedData,
-        status:
-          sanitizedData.status !== undefined ? sanitizedData.status : true,
+        status: sanitizedData.status !== undefined ? sanitizedData.status : true,
         thumbnails: sanitizedData.thumbnails || [],
       };
       products.push(newProduct);
@@ -82,10 +78,7 @@ class ProductsController {
   async update(pid, updatedData) {
     try {
       // Validar y sanitizar los datos actualizados del producto
-      const sanitizedData = this.validateAndSanitizeProductData(
-        updatedData,
-        false
-      );
+      const sanitizedData = this.validateAndSanitizeProductData(updatedData, false);
 
       const products = await this.fileManager.readFile();
       const index = products.findIndex((product) => product.id === pid);
@@ -173,10 +166,7 @@ class ProductsController {
     }
 
     if ("description" in data) {
-      if (
-        typeof data.description !== "string" ||
-        data.description.trim() === ""
-      ) {
+      if (typeof data.description !== "string" || data.description.trim() === "") {
         throw new Error("El campo 'description' debe ser una cadena no vacía.");
       }
       sanitizedData.description = sanitizeHtml(data.description.trim());
@@ -218,22 +208,36 @@ class ProductsController {
 
     if ("thumbnails" in data) {
       if (!Array.isArray(data.thumbnails)) {
-        throw new Error(
-          "El campo 'thumbnails' debe ser un arreglo de URLs de imágenes."
-        );
+        throw new Error("El campo 'thumbnails' debe ser un arreglo de URLs de imágenes.");
       }
       const validThumbnails = data.thumbnails.filter((url) => {
-        if (typeof url !== "string" || !validator.isURL(url)) {
+        if (typeof url !== "string") {
           console.warn(`URL inválida omitida: ${url}`);
           return false;
+        }
+        // Si la URL contiene "localhost" o "127.0.0.1", se valida con opciones personalizadas
+        if (url.includes("localhost") || url.includes("127.0.0.1")) {
+          const localOptions = {
+            protocols: ['http', 'https'],
+            require_protocol: true,
+            host_whitelist: ['localhost', '127.0.0.1'],
+          };
+          if (!validator.isURL(url, localOptions)) {
+            console.warn(`URL inválida omitida: ${url}`);
+            return false;
+          }
+        } else {
+          // Para URLs remotas se utiliza la validación por defecto
+          if (!validator.isURL(url)) {
+            console.warn(`URL inválida omitida: ${url}`);
+            return false;
+          }
         }
         return true;
       });
 
       if (validThumbnails.length === 0 && isNew) {
-        throw new Error(
-          "Debe proporcionar al menos una URL de imagen válida en 'thumbnails'."
-        );
+        throw new Error("Debe proporcionar al menos una URL de imagen válida en 'thumbnails'.");
       }
 
       sanitizedData.thumbnails = validThumbnails;
