@@ -1,0 +1,3 @@
+# Forzar LF en JSON y JS
+*.json   text eol=lf
+*.js     text eol=lf
