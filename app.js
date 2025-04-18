@@ -1,7 +1,9 @@
 // app.js
+require("dotenv").config();
 const express = require("express");
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT;
+const MONGO_URI= process.env.MONGO_URI;
 
 // Importar Handlebars
 const exphbs = require("express-handlebars");
@@ -17,6 +19,32 @@ const cartsController = require("./controllers/carts.controller");
 const productsRouter = require("./routers/products.router");
 const cartsRouter = require("./routers/carts.router");
 const viewsRouter = require("./routers/views.router");
+
+const mongoose = require("mongoose");
+const passport = require("passport");
+require("./config/passport.config"); 
+
+const cookieParser = require("cookie-parser");
+
+// Suprimir el warning de strictQuery
+mongoose.set("strictQuery", true);
+
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log("✔️ MongoDB conectado"))
+  .catch((err) => console.error("❌ Error conectando a MongoDB:", err));
+// 2) Middleware para cookies y Passport
+app.use(cookieParser());
+app.use(passport.initialize());
+
+
+
+// Montar el nuevo router de sesiones
+const sessionsRouter = require("./routers/sessions.router");
+app.use("/api/sessions", sessionsRouter);
+
 
 // Middleware para parsear JSON y URL-encoded
 app.use(express.json());
