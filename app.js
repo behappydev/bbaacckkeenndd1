@@ -18,6 +18,7 @@ const sessionsRouter = require("./routers/sessions.router");
 const productsRouter = require("./routers/products.router");
 const cartsRouter    = require("./routers/carts.router");
 const viewsRouter    = require("./routers/views.router");
+const mocksRouter = require('./routers/mocks.router');
 
 // 3) Controlador para socket.io
 const productsController = require("./controllers/products.controller");
@@ -171,3 +172,5 @@ io.on("connection", (socket) => {
     console.log("❌ Cliente desconectado:", socket.id);
   });
 });
+
+app.use('/api/mocks', mocksRouter);
