@@ -12,6 +12,15 @@ const router = Router();
  * POST /api/carts
  * Crear un nuevo carrito (público)
  */
+/**
+ * @swagger
+ * /api/carts:
+ *   post:
+ *     summary: Crear un nuevo carrito
+ *     responses:
+ *       201:
+ *         description: Carrito creado exitosamente
+ */
 router.post("/", async (req, res) => {
   try {
     const newCart = await cartsController.create();
@@ -24,6 +33,26 @@ router.post("/", async (req, res) => {
 /**
  * GET /api/carts/:cid
  * Obtener un carrito por ID (público)
+ */
+/**
+ * @swagger
+ * /api/carts/{cid}:
+ *   get:
+ *     summary: Obtener un carrito por ID
+ *     tags:
+ *       - Carts
+ *     parameters:
+ *       - in: path
+ *         name: cid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del carrito
+ *     responses:
+ *       200:
+ *         description: Carrito encontrado
+ *       404:
+ *         description: Carrito no encontrado
  */
 router.get("/:cid", async (req, res) => {
   try {
@@ -44,6 +73,32 @@ router.get("/:cid", async (req, res) => {
  * Agregar un producto al carrito (usa JSON file‑based)
  * - Solo usuarios autenticados con rol `user`
  * - Solo sobre su propio carrito
+ */
+/**
+ * @swagger
+ * /api/carts/{cid}/product/{pid}:
+ *   post:
+ *     summary: Agregar un producto al carrito
+ *     tags:
+ *       - Carts
+ *     parameters:
+ *       - in: path
+ *         name: cid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del carrito
+ *       - in: path
+ *         name: pid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del producto
+ *     responses:
+ *       200:
+ *         description: Producto agregado al carrito
+ *       400:
+ *         description: Error en la operación
  */
 router.post(
   "/:cid/product/:pid",
@@ -70,6 +125,26 @@ router.post(
  * - Solo usuarios autenticados con rol `user`
  * - Solo sobre su propio carrito
  * - Usa cartRepo (Mongo) o implementa tu propia lógica file‑based
+ */
+/**
+ * @swagger
+ * /api/carts/{cid}/purchase:
+ *   post:
+ *     summary: Finalizar compra del carrito
+ *     tags:
+ *       - Carts
+ *     parameters:
+ *       - in: path
+ *         name: cid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del carrito
+ *     responses:
+ *       200:
+ *         description: Compra finalizada exitosamente
+ *       500:
+ *         description: Error en la compra
  */
 router.post(
   "/:cid/purchase",

@@ -87,6 +87,9 @@ const upload = multer({
 // 9) Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
 
+const { swaggerUi, swaggerSpec } = require('./swagger');
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // 10) Montar routers
 app.use("/api/sessions", sessionsRouter);
 app.use("/api/products", productsRouter);
@@ -174,3 +177,11 @@ io.on("connection", (socket) => {
 });
 
 app.use('/api/mocks', mocksRouter);
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    status: "error",
+    message: err.message || "Error interno del servidor"
+  });
+});

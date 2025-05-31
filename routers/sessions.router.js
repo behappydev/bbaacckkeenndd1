@@ -17,6 +17,34 @@ const JWT_EXPIRES = process.env.TOKEN_EXPIRES_IN || "1h";
  * - Crea un carrito vacío
  * - Registra el usuario vinculando el ID del carrito
  */
+/**
+ * @swagger
+ * /api/sessions/register:
+ *   post:
+ *     summary: Registrar un nuevo usuario
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *               last_name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               age:
+ *                 type: number
+ *               password:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Usuario registrado correctamente
+ *       400:
+ *         description: Faltan datos obligatorios
+ */
 router.post("/register", async (req, res) => {
   try {
     const { first_name, last_name, email, age, password } = req.body;
@@ -62,6 +90,28 @@ router.post("/register", async (req, res) => {
  * - Usa la estrategia 'login' de Passport
  * - Genera JWT y lo envía como cookie HttpOnly
  */
+/**
+ * @swagger
+ * /api/sessions/login:
+ *   post:
+ *     summary: Iniciar sesión
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Sesión iniciada correctamente
+ *       401:
+ *         description: Credenciales inválidas
+ */
 router.post(
   "/login",
   passport.authenticate("login", { session: false }),
@@ -82,6 +132,17 @@ router.post(
 /**
  * GET /api/sessions/current
  * - Extrae JWT de la cookie y retorna UserDTO
+ */
+/**
+ * @swagger
+ * /api/sessions/current:
+ *   get:
+ *     summary: Obtener el usuario actual autenticado
+ *     responses:
+ *       200:
+ *         description: Usuario autenticado encontrado
+ *       401:
+ *         description: Token inválido o expirado
  */
 router.get(
   "/current",

@@ -47,6 +47,27 @@ const upload = multer({
 
 // Ruta para subir imágenes
 // POST /api/products/upload
+/**
+ * @swagger
+ * /api/products/upload:
+ *   post:
+ *     summary: Subir imágenes de productos
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               thumbnails:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *     responses:
+ *       200:
+ *         description: Imágenes subidas correctamente
+ */
 router.post("/upload", upload.array("thumbnails", 5), async (req, res) => {
   try {
     const files = req.files;
@@ -69,6 +90,29 @@ router.post("/upload", upload.array("thumbnails", 5), async (req, res) => {
 });
 
 // GET /api/products?limit=10 - Listar todos los productos con opción de limitación
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Obtener todos los productos
+ *     tags:
+ *       - Productos
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Límite de productos a retornar
+ *     responses:
+ *       200:
+ *         description: Lista de productos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ */
 router.get("/", async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
@@ -88,6 +132,26 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/products/:pid - Obtener un producto por ID
+/**
+ * @swagger
+ * /api/products/{pid}:
+ *   get:
+ *     summary: Obtener un producto por ID
+ *     tags:
+ *       - Productos
+ *     parameters:
+ *       - in: path
+ *         name: pid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del producto
+ *     responses:
+ *       200:
+ *         description: Producto encontrado
+ *       404:
+ *         description: Producto no encontrado
+ */
 router.get("/:pid", async (req, res) => {
   try {
     const pid = req.params.pid;
@@ -108,6 +172,42 @@ router.get("/:pid", async (req, res) => {
 });
 
 // POST /api/products - Agregar un nuevo producto
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Agregar un nuevo producto
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               stock:
+ *                 type: number
+ *               category:
+ *                 type: string
+ *               thumbnails:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               status:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Producto creado correctamente
+ *       400:
+ *         description: Error en los datos enviados
+ */
 router.post("/", async (req, res) => {
   try {
     const requiredFields = [
@@ -163,6 +263,53 @@ router.post("/", async (req, res) => {
 });
 
 // PUT /api/products/:pid - Actualizar un producto por ID
+/**
+ * @swagger
+ * /api/products/{pid}:
+ *   put:
+ *     summary: Actualizar un producto por ID
+ *     tags:
+ *       - Productos
+ *     parameters:
+ *       - in: path
+ *         name: pid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del producto
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               status:
+ *                 type: boolean
+ *               stock:
+ *                 type: number
+ *               category:
+ *                 type: string
+ *               thumbnails:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Producto actualizado correctamente
+ *       400:
+ *         description: Error en los datos enviados
+ *       404:
+ *         description: Producto no encontrado
+ */
 router.put("/:pid", async (req, res) => {
   try {
     const pid = req.params.pid;
@@ -212,6 +359,26 @@ router.put("/:pid", async (req, res) => {
 });
 
 // DELETE /api/products/:pid - Eliminar un producto por ID
+/**
+ * @swagger
+ * /api/products/{pid}:
+ *   delete:
+ *     summary: Eliminar un producto por ID
+ *     tags:
+ *       - Productos
+ *     parameters:
+ *       - in: path
+ *         name: pid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID del producto
+ *     responses:
+ *       200:
+ *         description: Producto eliminado correctamente
+ *       404:
+ *         description: Producto no encontrado
+ */
 router.delete("/:pid", async (req, res) => {
   try {
     const pid = req.params.pid;
